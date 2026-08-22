@@ -13,6 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const resolveLoginError = (apiError: ApiError) => {
     if (apiError.kind === 'unauthenticated') {
@@ -38,7 +39,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const sesion = await Datos.autenticar(username.trim(), password);
+      const sesion = await Datos.autenticar(username.trim(), password.trim());
       setError(null);
       await login(sesion.token, sesion.username);
     } catch (rawError) {
@@ -68,17 +69,25 @@ export default function Login() {
           }}
           autoCapitalize="none"
         />
-        <TextInput
-          style={styles.input}
-          placeholder={t('auth.password')}
-          placeholderTextColor={theme.colors.textSoft}
-          value={password}
-          onChangeText={text => {
-            setPassword(text);
-            if (error) setError(null);
-          }}
-          secureTextEntry
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder={t('auth.password')}
+            placeholderTextColor={theme.colors.textSoft}
+            value={password}
+            onChangeText={text => {
+              setPassword(text);
+              if (error) setError(null);
+            }}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}>
+            <Text style={styles.eyeButtonText}>{showPassword ? 'Ocultar' : 'Ver'}</Text>
+          </TouchableOpacity>
+        </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <TouchableOpacity
           style={[styles.loginButton, loading ? styles.loginButtonDisabled : undefined]}
@@ -144,6 +153,31 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: theme.radii.md,
     backgroundColor: theme.colors.surfaceMuted,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 12,
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  passwordInput: {
+    flex: 1,
+    color: theme.colors.text,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+  },
+  eyeButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  eyeButtonText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   error: {color: theme.colors.danger, textAlign: 'center', marginBottom: 12},
   loginButton: {
