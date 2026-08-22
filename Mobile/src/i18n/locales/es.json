@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loading": "Cargando..."
+  },
+  "auth": {
+    "loginTitle": "Iniciar sesión",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "login": "Entrar",
+    "logout": "Salir",
+    "invalidCredentials": "Usuario o contraseña incorrectos",
+    "serverError": "Ocurrió un error interno. Inténtalo nuevamente.",
+    "genericError": "No se pudo iniciar sesión. Verifica tu conexión e inténtalo de nuevo."
+  },
+  "home": {
+    "welcome": "Bienvenido a la pestaña Inicio"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "currentTheme": "Tema actual: {{theme}}",
+    "toggleTheme": "Cambiar tema",
+    "onlySpanish": "Idioma disponible: Español"
+  },
+  "menu": {
+    "welcome": "Bienvenido",
+    "welcomeUser": "Bienvenido {{user}}",
+    "button1": "Rutas",
+    "button2": "Vehículos",
+    "button3": "Trabajadores"
+  },
+  "rutas": {
+    "title": "Rutas",
+    "driver": "Conductor",
+    "assignDriverTitle": "Asignar conductor",
+    "assignDriverHint": "Selecciona un conductor que no tenga otra ruta asignada.",
+    "assignDriverOpen": "Abrir selección de conductor",
+    "assignDriverConfirm": "¿Asignar a {{driver}} a {{route}}?",
+    "assignDriverNoDrivers": "No hay conductores sin ruta asignada.",
+    "assignedDriver": "Conductor asignado",
+    "unassignedDriver": "Sin asignar",
+    "assignedVehicle": "Vehículo asignado",
+    "unassignedVehicle": "Sin asignar",
+    "completedDestinations": "Completados",
+    "pendingDestinations": "Pendientes",
+    "missingDestinations": "Faltantes",
+    "totalDestinations": "Total servicios",
+    "statusCompleted": "Completada",
+    "statusAlert": "Pendiente",
+    "statusBasic": "En curso",
+    "progress": "Porcentaje de completado",
+    "lastDestination": "Ultimo destino",
+    "pendingCanceledDestinations": "Destinos pendientes",
+    "back": "Regresar",
+    "moreInfo": "Más información",
+    "moreInfoMessage": "Mostrando información adicional para {{route}}.",
+    "showEvidence": "Mostrar evidencias",
+    "truckStatus": "Estado de la camioneta",
+    "canceledDestinations": "Servicios/destinos pendientes",
+    "showEvidenceMessage": "Mostrando evidencias de {{route}}.",
+    "truckStatusMessage": "Mostrando estado de la camioneta para {{route}}.",
+    "noAssignedVehicleMessage": "{{route}} no tiene una camioneta asignada.",
+    "canceledDestinationsMessage": "Mostrando servicios/destinos pendientes de {{route}}.",
+    "notFound": "Ruta no encontrada",
+    "cancelados": {
+      "destination": "Servicio o destino pendiente",
+      "comment": "Motivo",
+      "notFound": "No hay servicios/destinos pendientes registrados para esta ruta"
+    },
+    "evidencias": {
+      "title": "Evidencias",
+      "servicesTitle": "Servicios de la ruta",
+      "todayServicesTitle": "Servicios del día",
+      "selectServiceHint": "Selecciona un servicio para ver sus evidencias.",
+      "selectServiceFirst": "Selecciona un servicio para cargar evidencias.",
+      "serviceId": "Servicio #{{id}}",
+      "comentario": "Comentario del operador",
+      "imagesTitle": "Imágenes del servicio",
+      "noImages": "No se encontraron imágenes para este servicio",
+      "estadoAlLlegar": "Estado al llegar",
+      "estadoAlSalir": "Estado al salir",
+      "firmaEncargado": "Registro del encargado del punto",
+      "notFound": "No hay evidencias registradas para este servicio",
+      "noServices": "No hay servicios disponibles para esta ruta",
+      "status": {
+        "completed": "Completado",
+        "pending": "Pendiente",
+        "canceled": "Cancelado",
+        "skipped": "Saltado"
+      }
+    },
+    "route1": "Ruta 1",
+    "route2": "Ruta 2",
+    "route3": "Ruta 3",
+    "route4": "Ruta 4",
+    "route5": "Ruta 5",
+    "route6": "Ruta 6",
+    "route7": "Ruta 7",
+    "route8": "Ruta 8",
+    "route9": "Ruta 9",
+    "route10": "Ruta 10",
+    "route11": "Ruta 11",
+    "route12": "Ruta 12",
+    "route13": "Ruta 13",
+    "route14": "Ruta 14",
+    "route15": "Ruta 15"
+  },
+  "vehiculos": {
+    "title": "Vehículos",
+    "kilometraje": "Kilometraje",
+    "assignedRoute": "Ruta asignada",
+    "unassignedRoute": "Sin asignar",
+    "deficiencias": "Deficiencias",
+    "comentarios": "Comentarios",
+    "noDeficiencias": "No hay deficiencias registradas",
+    "noComentarios": "No hay comentarios registrados",
+    "notFound": "No se encontró la camioneta solicitada",
+    "estado": {
+      "activo": "Activo",
+      "mantenimiento": "En mantenimiento",
+      "inactivo": "Inactivo"
+    }
+  },
+  "trabajadores": {
+    "title": "Trabajadores",
+    "notFound": "Trabajador no encontrado",
+    "assignedRouteLabel": "Ruta asignada: {{ruta}}",
+    "assignedRouteNone": "Ruta asignada: Sin asignar",
+    "rutasAsignadas": "Rutas asignadas",
+    "rutasDisponibles": "Rutas disponibles",
+    "asignarRuta": "Asignar ruta",
+    "desasignarRuta": "Desasignar ruta",
+    "confirmarAsignacion": "¿Asignar {{ruta}} a este conductor?",
+    "confirmarDesasignacion": "¿Remover esta ruta del conductor?",
+    "asignar": "Asignar",
+    "desasignar": "Remover",
+    "cancel": "Cancelar",
+    "tapToAssign": "Toca para asignar",
+    "openDriverToEdit": "Toca para abrir y editar su asignacion",
+    "manageDriverAssignments": "Gestionar asignaciones de conductores",
+    "longPresseToRemove": "Mantén presionado para remover",
+    "onlyDriversCanBeAssigned": "Solo los trabajadores con rol de conductor pueden recibir rutas.",
+    "noRutas": "No hay rutas disponibles",
+    "errors": {
+      "already-assigned": "Este conductor ya tiene una ruta asignada. Quita la ruta actual para asignar otra.",
+      "route-taken": "Esta ruta ya está asignada a otro conductor.",
+      "invalid-worker": "Solo se pueden asignar rutas a conductores.",
+      "invalid-route": "La ruta seleccionada no es válida."
+    }
+  }
+}
