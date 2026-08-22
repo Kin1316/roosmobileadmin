@@ -76,16 +76,16 @@ export interface EvidenciaData {
 export interface RutaServicioData {
   id: number;
   rutaId: number;
-  destino: string;
+  storeName: string;
   estado: ServiceLifecycleStatus;
-  comentario: string;
+  comentario?: string;
   fechaServicio?: string;
 }
 
 export interface DestinoCanceladoData {
   id: number;
   rutaId: number;
-  destino: string;
+  storeName: string;
   comentario: string;
 }
 
@@ -152,6 +152,7 @@ interface BackendServicePayload {
   serviceId?: number | string;
   routeId?: number | string;
   route_id?: number | string;
+  storeName?: string;
   destination?: string;
   address?: string;
   serviceDate?: string;
@@ -287,23 +288,7 @@ export class Datos {
     {id: 3, labelKey: 'rutas.canceledDestinations', messageKey: 'rutas.canceledDestinationsMessage'},
   ];
 
-  private static readonly VEHICULOS: VehiculoCatalogoData[] = [
-    {id: 1, placa: 'ABC-123', marca: 'Toyota', modelo: 'Hilux', anio: 2019, estado: 'activo', kilometraje: 45230},
-    {id: 2, placa: 'DEF-456', marca: 'Ford', modelo: 'Ranger', anio: 2020, estado: 'activo', kilometraje: 38750},
-    {id: 3, placa: 'GHI-789', marca: 'Chevrolet', modelo: 'S10', anio: 2018, estado: 'mantenimiento', kilometraje: 62100},
-    {id: 4, placa: 'JKL-012', marca: 'Nissan', modelo: 'Frontier', anio: 2021, estado: 'activo', kilometraje: 21400},
-    {id: 5, placa: 'MNO-345', marca: 'Mitsubishi', modelo: 'L200', anio: 2017, estado: 'inactivo', kilometraje: 89600},
-    {id: 6, placa: 'PQR-678', marca: 'Toyota', modelo: 'Land Cruiser', anio: 2022, estado: 'activo', kilometraje: 12300},
-    {id: 7, placa: 'STU-901', marca: 'Ford', modelo: 'F-150', anio: 2019, estado: 'mantenimiento', kilometraje: 54800},
-    {id: 8, placa: 'VWX-234', marca: 'Isuzu', modelo: 'D-Max', anio: 2020, estado: 'activo', kilometraje: 33900},
-    {id: 9, placa: 'YZA-567', marca: 'Hyundai', modelo: 'Santa Cruz', anio: 2021, estado: 'activo', kilometraje: 28700},
-    {id: 10, placa: 'BCD-890', marca: 'Mazda', modelo: 'BT-50', anio: 2018, estado: 'mantenimiento', kilometraje: 67750},
-    {id: 11, placa: 'EFG-123', marca: 'Volkswagen', modelo: 'Amarok', anio: 2019, estado: 'activo', kilometraje: 49980},
-    {id: 12, placa: 'HIJ-456', marca: 'RAM', modelo: '1500', anio: 2022, estado: 'activo', kilometraje: 18120},
-    {id: 13, placa: 'KLM-789', marca: 'Great Wall', modelo: 'Wingle 7', anio: 2020, estado: 'inactivo', kilometraje: 74300},
-    {id: 14, placa: 'NOP-012', marca: 'JAC', modelo: 'T8', anio: 2021, estado: 'activo', kilometraje: 31240},
-    {id: 15, placa: 'QRS-345', marca: 'Peugeot', modelo: 'Landtrek', anio: 2023, estado: 'activo', kilometraje: 9400},
-  ];
+  private static readonly VEHICULOS: VehiculoCatalogoData[] = [];
 
   private static readonly VEHICULO_ESTADOS: VehiculoEstadoData[] = [
     {vehiculoId: 1, deficiencias: ['Luz trasera derecha intermitente', 'Desgaste en llanta delantera izquierda'], comentarios: ['Programar cambio de foco esta semana', 'Rotacion de llantas recomendada']},
@@ -323,23 +308,7 @@ export class Datos {
     {vehiculoId: 15, deficiencias: [], comentarios: ['Ultima inspeccion aprobada', 'Lista para operacion diaria']},
   ];
 
-  private static readonly RUTAS: RutaData[] = [
-    {id: 1, nombre: 'Ruta 1', conductor: 'Carlos Pérez', vehiculoAsignado: 'ABC-123', completado: 12, destinosCompletados: 1, ultimoDestino: 'Mercado Central', destinosPendientes: 6, destinosCancelados: 1},
-    {id: 2, nombre: 'Ruta 2', conductor: 'Ana López', vehiculoAsignado: '', completado: 25, destinosCompletados: 2, ultimoDestino: 'Av. Terminal Norte', destinosPendientes: 5, destinosCancelados: 0},
-    {id: 3, nombre: 'Ruta 3', conductor: 'Luis García', vehiculoAsignado: '', completado: 34, destinosCompletados: 3, ultimoDestino: 'Sector San Martín', destinosPendientes: 4, destinosCancelados: 1},
-    {id: 4, nombre: 'Ruta 4', conductor: 'María Torres', vehiculoAsignado: '', completado: 41, destinosCompletados: 4, ultimoDestino: 'Parque Industrial', destinosPendientes: 4, destinosCancelados: 0},
-    {id: 5, nombre: 'Ruta 5', conductor: 'Jorge Díaz', vehiculoAsignado: '', completado: 50, destinosCompletados: 5, ultimoDestino: 'Urbanización Los Olivos', destinosPendientes: 3, destinosCancelados: 1},
-    {id: 6, nombre: 'Ruta 6', conductor: 'Sofía Ramírez', vehiculoAsignado: '', completado: 58, destinosCompletados: 6, ultimoDestino: 'Balneario Huanchaco', destinosPendientes: 3, destinosCancelados: 0},
-    {id: 7, nombre: 'Ruta 7', conductor: 'Pedro Castillo', vehiculoAsignado: '', completado: 63, destinosCompletados: 6, ultimoDestino: 'Plaza Pueblo Libre', destinosPendientes: 3, destinosCancelados: 1},
-    {id: 8, nombre: 'Ruta 8', conductor: 'Lucía Herrera', vehiculoAsignado: '', completado: 69, destinosCompletados: 7, ultimoDestino: 'Mercado Santa Anita', destinosPendientes: 2, destinosCancelados: 0},
-    {id: 9, nombre: 'Ruta 9', conductor: 'Diego Flores', vehiculoAsignado: '', completado: 74, destinosCompletados: 7, ultimoDestino: 'Malecón Barranco', destinosPendientes: 2, destinosCancelados: 1},
-    {id: 10, nombre: 'Ruta 10', conductor: 'Valentina Cruz', vehiculoAsignado: '', completado: 81, destinosCompletados: 8, ultimoDestino: 'Parque Miraflores', destinosPendientes: 2, destinosCancelados: 0},
-    {id: 11, nombre: 'Ruta 11', conductor: 'Miguel Rojas', vehiculoAsignado: '', completado: 87, destinosCompletados: 9, ultimoDestino: 'Comas Sector 3', destinosPendientes: 1, destinosCancelados: 1},
-    {id: 12, nombre: 'Ruta 12', conductor: 'Camila Vega', vehiculoAsignado: '', completado: 93, destinosCompletados: 9, ultimoDestino: 'Chorrillos Costero', destinosPendientes: 1, destinosCancelados: 0},
-    {id: 13, nombre: 'Ruta 13', conductor: 'Andrés Molina', vehiculoAsignado: '', completado: 95, destinosCompletados: 10, ultimoDestino: 'La Molina Residencial', destinosPendientes: 1, destinosCancelados: 0},
-    {id: 14, nombre: 'Ruta 14', conductor: 'Renata Silva', vehiculoAsignado: '', completado: 97, destinosCompletados: 10, ultimoDestino: 'Ate Industrial', destinosPendientes: 1, destinosCancelados: 1},
-    {id: 15, nombre: 'Ruta 15', conductor: 'Bruno Navarro', vehiculoAsignado: '', completado: 100, destinosCompletados: 10, ultimoDestino: 'Callao Centro', destinosPendientes: 0, destinosCancelados: 0},
-  ];
+  private static readonly RUTAS: RutaData[] = [];
 
   private static getConductorAsignadoNombreByRutaId(rutaId: number): string {
     const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
@@ -584,20 +553,25 @@ export class Datos {
   }
 
   private static normalizeServiceLifecycleStatus(raw: BackendServicePayload): ServiceLifecycleStatus {
-    const status = String(raw.status ?? '').toLowerCase();
-    const skippedTokens = ['skip', 'skipped', 'saltad', 'omit', 'no atendido', 'no_atendido', 'r', 'retras', 'postpon', 'reprogram'];
-    if (skippedTokens.some(token => status.includes(token))) {
+    const status = String(raw.status ?? '').toLowerCase().trim();
+    
+    const exactSkipped = ['r', 'skip', 'omit'];
+    const partialSkipped = ['skipped', 'saltad', 'no atendido', 'no_atendido', 'retras', 'postpon', 'reprogram'];
+    
+    if (exactSkipped.includes(status) || partialSkipped.some(t => status.includes(t))) {
       return 'skipped';
     }
 
     const canceledByFlag = Boolean(raw.canceled ?? raw.isCanceled);
 
-    if (canceledByFlag || status.includes('cancel')) {
+    if (canceledByFlag || status.includes('cancel') || status === 'x') {
       return 'canceled';
     }
 
-    const completedTokens = ['c', 'completed', 'completado', 'done', 'finished', 'finalizado', 'atendido', 'closed'];
-    if (completedTokens.some(token => status === token || status.includes(token))) {
+    const exactCompleted = ['c', 'done', 'closed'];
+    const partialCompleted = ['completed', 'completado', 'finished', 'finalizado', 'atendido'];
+    
+    if (exactCompleted.includes(status) || partialCompleted.some(t => status.includes(t))) {
       return 'completed';
     }
 
@@ -609,21 +583,27 @@ export class Datos {
       return null;
     }
 
-    const asIsoPrefix = value.trim().slice(0, 10);
+    const trimmed = value.trim();
+
+    // Si es un formato ISO con zona horaria (T y Z o offset), lo parseamos a la zona local
+    if (trimmed.includes('T') && (trimmed.includes('Z') || trimmed.includes('+') || trimmed.match(/-\d{2}:\d{2}$/))) {
+      const parsed = Date.parse(trimmed);
+      if (Number.isFinite(parsed)) {
+        const date = new Date(parsed);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    // Para formatos tipo "YYYY-MM-DD" o "YYYY-MM-DD HH:MM:SS" (sin zona horaria explícita), extraemos directo.
+    const asIsoPrefix = trimmed.slice(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(asIsoPrefix)) {
       return asIsoPrefix;
     }
 
-    const parsed = Date.parse(value);
-    if (!Number.isFinite(parsed)) {
-      return null;
-    }
-
-    const date = new Date(parsed);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return null;
   }
 
   private static getServiceIsoDate(raw: BackendServicePayload): string | null {
@@ -699,10 +679,13 @@ export class Datos {
       return null;
     }
 
+    // DEBUGGING TEMPORAL PARA VER QUÉ RECIBE LA APP REALMENTE
+    console.log(`[DEBUG ROOS] Mapeando servicio ${id}. Raw object:`, JSON.stringify(raw));
+
     return {
       id,
       rutaId,
-      destino: (raw.destination ?? raw.address ?? `Servicio ${id}`).trim(),
+      storeName: (raw.storeName ?? raw.destination ?? raw.address ?? `Servicio ${id}`).trim(),
       estado: Datos.normalizeServiceLifecycleStatus(raw),
       comentario: (raw.comment ?? raw.observation ?? '').trim(),
       fechaServicio: Datos.getServiceIsoDate(raw) ?? undefined,
@@ -720,7 +703,7 @@ export class Datos {
 
     services.forEach(item => {
       const serviceStatus = Datos.normalizeServiceLifecycleStatus(item);
-      const destinationLabel = (item.destination ?? item.address ?? '').trim();
+      const destinationLabel = (item.storeName ?? item.destination ?? item.address ?? '').trim();
 
       if (destinationLabel) {
         ultimoDestino = destinationLabel;
@@ -829,11 +812,8 @@ export class Datos {
     }
   }
 
-  private static async getServiciosPorRutaDesdeBackend(
-    rutaId: number,
-    options?: ServicesQueryOptions,
-  ): Promise<BackendServicePayload[] | null> {
-    const statuses = options?.statuses ?? ['completed', 'pending', 'canceled', 'skipped', 'saltado'];
+  private static async getServiciosPorRutaDesdeBackend(rutaId: number, options?: {date?: string; statuses?: string[]}): Promise<BackendServicePayload[] | null> {
+    const statuses = options?.statuses ?? ['C', 'P', 'R', 'X', 'I'];
     const date = options?.date ?? Datos.getTodayIsoDate();
 
     try {
@@ -1348,7 +1328,7 @@ export class Datos {
     return {
       id,
       rutaId,
-      destino: raw.destination ?? raw.address ?? `Servicio ${id}`,
+      storeName: raw.storeName ?? raw.destination ?? raw.address ?? `Servicio ${id}`,
       comentario:
         comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
     };
@@ -1707,123 +1687,9 @@ export class Datos {
     };
   }
 
-  private static readonly EVIDENCIAS: EvidenciaData[] = [
-    {
-      rutaId: 1,
-      comentario: 'La recolección inició con retraso por congestión en el acceso al mercado. Se completó el vaciado de un contenedor principal.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedor principal antes del vaciado'}, {id: 2, descripcion: 'Frente del vehículo al inicio del turno'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Contenedor vaciado y área asegurada'}, {id: 2, descripcion: 'Zona barrida tras la recolección'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado del punto de acopio'},
-    },
-    {
-      rutaId: 2,
-      comentario: 'Sin incidencias. Se completó la recolección de residuos domiciliarios según el recorrido programado.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva vacía antes de iniciar la ruta'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Punto de recolección liberado'}, {id: 2, descripcion: 'Área sin residuos dispersos'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor de zona'},
-    },
-    {
-      rutaId: 3,
-      comentario: 'Dos puntos quedaron para una segunda pasada porque los contenedores aún no habían sido colocados en la vía autorizada.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedores sin acceso libre al arribo'}, {id: 2, descripcion: 'Estado del vehículo al comenzar el tramo'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Registro del punto pendiente para segunda visita'}, {id: 2, descripcion: 'Observación de acceso restringido adjunta'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del inspector de sector'},
-    },
-    {
-      rutaId: 4,
-      comentario: 'Ruta cumplida al 100%. Recolección industrial sin observaciones ni derrames.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedores industriales antes del vaciado'}, {id: 2, descripcion: 'Compuerta del vehículo asegurada'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Contenedores vacíos'}, {id: 2, descripcion: 'Patio limpio al finalizar el servicio'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado de planta'},
-    },
-    {
-      rutaId: 5,
-      comentario: 'Un punto de recolección fue cancelado porque la ubicación registrada no coincidía con el contenedor asignado.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Punto revisado sin contenedor visible'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Incidencia registrada en la ruta'}, {id: 2, descripcion: 'Evidencia fotográfica del punto vacío'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor de operación'},
-    },
-    {
-      rutaId: 6,
-      comentario: 'La lluvia redujo la velocidad de recorrido en la zona norte, pero se mantuvo la recolección de residuos húmedos.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva y tapas verificadas por lluvia'}, {id: 2, descripcion: 'Estado inicial de la vía'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección completada bajo lluvia'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del coordinador de zona norte'},
-    },
-    {
-      rutaId: 7,
-      comentario: 'La unidad presentó una falla menor en el sistema hidráulico; la recolección se reanudó con 40 minutos de retraso.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Vehículo antes de la revisión mecánica'}, {id: 2, descripcion: 'Sistema de compactación asegurado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Ruta reanudada y tramo final completado'}, {id: 2, descripcion: 'Reporte técnico adjunto'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del técnico de mantenimiento'},
-    },
-    {
-      rutaId: 8,
-      comentario: 'Ruta completada sin incidencias. Se retiraron residuos orgánicos y reciclables según lo previsto.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Puntos de acopio en condición operativa al inicio'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección completada y zona despejada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del responsable municipal'},
-    },
-    {
-      rutaId: 9,
-      comentario: 'Se detectó un contenedor fracturado durante el recorrido y se notificó al área de mantenimiento urbano.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedor en uso al inicio'}, {id: 2, descripcion: 'Unidad operativa antes del vaciado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Daño registrado en el contenedor'}, {id: 2, descripcion: 'Fotografía de la estructura afectada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del inspector de calidad urbana'},
-    },
-    {
-      rutaId: 10,
-      comentario: 'Sin novedades. Recolección rápida en zona comercial completada antes del horario pico.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Equipo listo para recolección rápida'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Registro de recolección completada'}, {id: 2, descripcion: 'Foto del punto despejado'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado comercial'},
-    },
-    {
-      rutaId: 11,
-      comentario: 'Punto ubicado en zona restringida; se coordinó el ingreso con seguridad para retirar residuos acumulados.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Acceso autorizado por seguridad'}, {id: 2, descripcion: 'Vehículo en ingreso controlado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Residuos retirados en caseta de control'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del guardia de acceso'},
-    },
-    {
-      rutaId: 12,
-      comentario: 'Ruta con el mayor volumen de residuos del mes. El recorrido se completó sin desbordes.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva preparada para alto volumen'}, {id: 2, descripcion: 'Compactación inicial verificada'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Puntos vaciados por completo'}, {id: 2, descripcion: 'Área sin residuos remanentes'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del jefe de operaciones'},
-    },
-    {
-      rutaId: 13,
-      comentario: 'La administración del condominio solicitó reprogramar el retiro de residuos para un nuevo horario y se atendió sin incidentes.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Ruta reprogramada lista para ejecución'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección en nuevo horario confirmada'}, {id: 2, descripcion: 'Conformidad del encargado registrada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado del condominio'},
-    },
-    {
-      rutaId: 14,
-      comentario: 'Ruta casi finalizada. Un punto de recolección quedó pendiente para la jornada de mañana.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva con carga parcial del día'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Tramos del día completados'}, {id: 2, descripcion: 'Punto pendiente documentado con fotografía'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor del turno'},
-    },
-    {
-      rutaId: 15,
-      comentario: 'Ruta completada al 100%. Excelente desempeño en la recolección y traslado final de residuos.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Inicio de ruta registrado'}, {id: 2, descripcion: 'Kilometraje inicial anotado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Último punto de recolección completado'}, {id: 2, descripcion: 'Cierre de ruta confirmado'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado de base operativa'},
-    },
-  ];
+  private static readonly EVIDENCIAS: EvidenciaData[] = [];
 
-  private static readonly DESTINOS_CANCELADOS: DestinoCanceladoData[] = [
-    {id: 1, rutaId: 1, destino: 'Av. Grau 450', comentario: 'El punto quedó inaccesible por cierre temporal del mercado y no se pudo retirar el contenedor.'},
-    {id: 2, rutaId: 3, destino: 'Jr. Unión 181', comentario: 'La unidad no pudo ingresar por bloqueo de vía en el horario programado.'},
-    {id: 3, rutaId: 5, destino: 'Los Olivos Mz B Lt 8', comentario: 'La ubicación registrada no coincidía con el punto real de recolección.'},
-    {id: 4, rutaId: 7, destino: 'Pueblo Libre 245', comentario: 'La falla mecánica retrasó el recorrido y el punto fue reprogramado para el siguiente turno.'},
-    {id: 5, rutaId: 9, destino: 'Barranco 902', comentario: 'El contenedor estaba fracturado y se canceló la recolección hasta reemplazo por seguridad.'},
-    {id: 6, rutaId: 11, destino: 'Comas Sector 3', comentario: 'Acceso restringido sin autorización vigente al momento de la visita.'},
-    {id: 7, rutaId: 14, destino: 'Ate Zona Industrial', comentario: 'El horario autorizado para retiro de residuos había finalizado y el servicio quedó reagendado.'},
-  ];
+  private static readonly DESTINOS_CANCELADOS: DestinoCanceladoData[] = [];
 
   static async getVehiculos(): Promise<VehiculoData[]> {
     const backendData = await Datos.getVehiculosDesdeBackend();
@@ -1913,31 +1779,7 @@ export class Datos {
     };
   }
 
-  private static readonly TRABAJADORES: TrabajadorData[] = [
-    {id: 1,  nombre: 'Carlos Pérez',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 2,  nombre: 'Ana López',            cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 3,  nombre: 'Luis García',          cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 4,  nombre: 'María Torres',         cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 5,  nombre: 'Jorge Díaz',           cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 6,  nombre: 'Sofía Ramírez',        cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 7,  nombre: 'Pedro Castillo',       cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 8,  nombre: 'Lucía Herrera',        cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 9,  nombre: 'Diego Flores',         cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 10, nombre: 'Valentina Cruz',       cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 11, nombre: 'Miguel Rojas',         cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 12, nombre: 'Camila Vega',          cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 13, nombre: 'Andrés Molina',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 14, nombre: 'Renata Silva',         cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 15, nombre: 'Bruno Navarro',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 16, nombre: 'Fernando Gómez',       cargo: 'Gerente de Rutas',   tipo: 'administrativo'},
-    {id: 17, nombre: 'Gabriela Quispe',      cargo: 'Asistente Admin',    tipo: 'administrativo'},
-    {id: 18, nombre: 'Roberto Sánchez',      cargo: 'Supervisor',         tipo: 'administrativo'},
-    {id: 19, nombre: 'Isabela Martínez',     cargo: 'Coordinadora',       tipo: 'administrativo'},
-    {id: 20, nombre: 'Javier López',         cargo: 'Asistente Admin',    tipo: 'administrativo'},
-    {id: 21, nombre: 'Marcela Vargas',       cargo: 'Gerente de Flota',   tipo: 'administrativo'},
-    {id: 22, nombre: 'Ricardo Fuentes',      cargo: 'Coordinador Logístico', tipo: 'administrativo'},
-    {id: 23, nombre: 'Patricia Núñez',       cargo: 'Asistente de Oficina', tipo: 'administrativo'},
-  ];
+  private static readonly TRABAJADORES: TrabajadorData[] = [];
 
   static async getTrabajadores(): Promise<TrabajadorData[]> {
     const users = await Datos.getUsuariosDesdeBackend();
@@ -2234,7 +2076,7 @@ export class Datos {
   static async getServiciosConEstadoByRutaId(
     rutaId: number,
     date?: string,
-    statuses: string[] = ['completed', 'pending', 'canceled', 'skipped', 'saltado'],
+    statuses: string[] = ['C', 'P', 'R', 'X', 'I'],
   ): Promise<RutaServicioData[]> {
     const services = await Datos.getServiciosPorRutaDesdeBackend(rutaId, {date, statuses});
     if (services && services.length > 0) {
@@ -2267,13 +2109,13 @@ export class Datos {
     const skippedServices = await Datos.getServiciosConEstadoByRutaId(
       rutaId,
       Datos.getTodayIsoDate(),
-      ['canceled', 'skipped', 'saltado'],
+      ['X', 'R'],
     );
 
     const mappedSkipped = skippedServices.map(service => ({
       id: service.id,
       rutaId,
-      destino: service.destino,
+      storeName: service.storeName,
       comentario: service.comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
     }));
 

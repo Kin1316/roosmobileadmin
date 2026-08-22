@@ -133,7 +133,7 @@ export default function RutaEvidencias() {
                 setEvidencia(null);
               });
             }}>
-            <Text style={styles.serviceTitle}>{servicio.destino || `Servicio ${servicio.id}`}</Text>
+            <Text style={styles.serviceTitle}>{servicio.storeName || `Servicio ${servicio.id}`}</Text>
             <Text style={styles.serviceMeta}>
               {t('rutas.evidencias.serviceId', {id: servicio.id})} · {getStatusLabel(servicio.estado)}
             </Text>

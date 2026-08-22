@@ -59,7 +59,7 @@ export default function RutaDestinosCancelados() {
       {destinos.map(destino => (
         <View key={destino.id} style={styles.card}>
           <Text style={styles.destinationLabel}>{t('rutas.cancelados.destination')}</Text>
-          <Text style={styles.destinationValue}>{destino.destino}</Text>
+          <Text style={styles.destinationValue}>{destino.storeName}</Text>
           <Text style={styles.commentLabel}>{t('rutas.cancelados.comment')}</Text>
           <Text style={styles.commentValue}>{destino.comentario}</Text>
         </View>
