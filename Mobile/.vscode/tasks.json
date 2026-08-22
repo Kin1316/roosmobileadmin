@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "start-metro",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"start"
+			],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Release APK",
+			"type": "shell",
+			"command": "gradlew.bat",
+			"args": [
+				"app:assembleRelease"
+			],
+			"group": "build"
+		}
+	]
+}
