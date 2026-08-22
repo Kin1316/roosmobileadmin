@@ -1,19 +1,19 @@
-import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity} from 'react-native';
-import {useTranslation} from 'react-i18next';
-import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../../navigation/RootNavigator';
-import {Datos, RutaServicioData} from '../../services/datos';
-import {theme} from '../../theme';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { Datos, RutaServicioData } from '../../services/datos';
+import { theme } from '../../theme';
 
 type RutaEvidenciasRouteProp = RouteProp<RootStackParamList, 'RutaEvidencias'>;
 
 export default function RutaEvidencias() {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const route = useRoute<RutaEvidenciasRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  
+
   const [servicios, setServicios] = useState<RutaServicioData[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -47,6 +47,8 @@ export default function RutaEvidencias() {
     if (status === 'completed') return t('rutas.evidencias.status.completed', 'Completado');
     if (status === 'skipped') return t('rutas.evidencias.status.skipped', 'Saltado');
     if (status === 'canceled') return t('rutas.evidencias.status.canceled', 'Cancelado');
+    if (status === 'in_progress') return t('rutas.evidencias.status.inProgress', 'En progreso');
+    if (status === 'delayed') return t('rutas.evidencias.status.delayed', 'Retrasado');
     return t('rutas.evidencias.status.pending', 'Pendiente');
   };
 
@@ -79,7 +81,7 @@ export default function RutaEvidencias() {
       <Text style={styles.seccionLabel}>
         {t('rutas.evidencias.todayServicesTitle', 'SERVICIOS ORDENADOS POR PRIORIDAD')}
       </Text>
-      
+
       <View style={styles.listContainer}>
         {servicios.map((servicio, index) => (
           <TouchableOpacity
@@ -89,7 +91,7 @@ export default function RutaEvidencias() {
             <View style={styles.priorityBadge}>
               <Text style={styles.priorityText}>{index + 1}</Text>
             </View>
-            
+
             <View style={styles.serviceInfo}>
               <Text style={styles.serviceTitle}>
                 {servicio.storeName || `Servicio ${servicio.id}`}
@@ -98,9 +100,9 @@ export default function RutaEvidencias() {
                 ID: {servicio.id} · {getStatusLabel(servicio.estado)}
               </Text>
               {servicio.priority !== 999 && (
-                 <Text style={styles.serviceMeta}>
-                   Prioridad del sistema: {servicio.priority}
-                 </Text>
+                <Text style={styles.serviceMeta}>
+                  Prioridad del sistema: {servicio.priority}
+                </Text>
               )}
             </View>
           </TouchableOpacity>
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: theme.colors.surface,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,

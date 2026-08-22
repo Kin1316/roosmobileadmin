@@ -1,6 +1,7 @@
 export type PantallaApp = 'Rutas' | 'Vehiculos' | 'Trabajadores';
 
-import {api, ApiError, getApiBaseUrlCandidates, setApiBaseUrl} from './api';
+import { api, ApiError, getApiBaseUrlCandidates, setApiBaseUrl } from './api';
+import { BackendEvidencePayload, BackendEvidenceWaste, EvidenceData } from './evidence';
 
 export interface SesionUsuario {
   token: string;
@@ -19,7 +20,7 @@ export interface AccionRuta {
   messageKey: 'rutas.showEvidenceMessage' | 'rutas.truckStatusMessage' | 'rutas.canceledDestinationsMessage';
 }
 
-export type ServiceLifecycleStatus = 'completed' | 'pending' | 'canceled' | 'skipped';
+export type ServiceLifecycleStatus = 'completed' | 'pending' | 'canceled' | 'in_progress' | 'delayed' | 'skipped';
 
 export interface RutaData {
   id: number;
@@ -44,8 +45,6 @@ export interface VehiculoData {
   rutaAsignada: string;
 }
 
-type VehiculoCatalogoData = Omit<VehiculoData, 'rutaAsignada'>;
-
 export interface TrabajadorData {
   id: number;
   nombre: string;
@@ -59,7 +58,19 @@ export interface VehiculoEstadoData {
   comentarios: string[];
 }
 
+export interface ImagenEvidencia {
+  id: number;
+  descripcion: string;
+  url?: string;
+}
 
+export interface EvidenciaData {
+  rutaId: number;
+  comentario: string;
+  estadoAlLlegar: ImagenEvidencia[];
+  estadoAlSalir: ImagenEvidencia[];
+  firmaEncargado: ImagenEvidencia;
+}
 
 export interface RutaServicioData {
   id: number;
@@ -76,6 +87,12 @@ export interface DestinoCanceladoData {
   rutaId: number;
   storeName: string;
   comentario: string;
+}
+
+export interface MappedEvidenceWaste {
+  id: number;
+  weight: number;
+  wasteTypeId: number;
 }
 
 export interface AsignacionRutaResult {
@@ -240,43 +257,28 @@ interface RouteDailyMetrics {
 }
 
 export class Datos {
-  // One-to-one relation: each conductor has at most one route, and each route at most one conductor.
-  private static readonly ASIGNACIONES: Map<number, number> = new Map();
   private static readonly USERS_ENDPOINT = '/users';
 
   private static readonly MENU: OpcionMenu[] = [
-    {id: 1, labelKey: 'menu.button1', screen: 'Rutas'},
-    {id: 2, labelKey: 'menu.button2', screen: 'Vehiculos'},
-    {id: 3, labelKey: 'menu.button3', screen: 'Trabajadores'},
+    { id: 1, labelKey: 'menu.button1', screen: 'Rutas' },
+    { id: 2, labelKey: 'menu.button2', screen: 'Vehiculos' },
+    { id: 3, labelKey: 'menu.button3', screen: 'Trabajadores' },
   ];
 
   private static readonly RUTA_ACCIONES: AccionRuta[] = [
-    {id: 1, labelKey: 'rutas.showEvidence', messageKey: 'rutas.showEvidenceMessage'},
-    {id: 2, labelKey: 'rutas.truckStatus', messageKey: 'rutas.truckStatusMessage'},
-    {id: 3, labelKey: 'rutas.canceledDestinations', messageKey: 'rutas.canceledDestinationsMessage'},
+    { id: 1, labelKey: 'rutas.showEvidence', messageKey: 'rutas.showEvidenceMessage' },
+    { id: 2, labelKey: 'rutas.truckStatus', messageKey: 'rutas.truckStatusMessage' },
+    { id: 3, labelKey: 'rutas.canceledDestinations', messageKey: 'rutas.canceledDestinationsMessage' },
   ];
 
-  private static readonly VEHICULOS: VehiculoCatalogoData[] = [];
+  private static readonly VEHICULOS: VehiculoData[] = [];
 
-  private static readonly VEHICULO_ESTADOS: VehiculoEstadoData[] = [
-    {vehiculoId: 1, deficiencias: ['Luz trasera derecha intermitente', 'Desgaste en llanta delantera izquierda'], comentarios: ['Programar cambio de foco esta semana', 'Rotacion de llantas recomendada']},
-    {vehiculoId: 2, deficiencias: ['Freno de mano con recorrido largo'], comentarios: ['Ajustar cable en proximo mantenimiento preventivo']},
-    {vehiculoId: 3, deficiencias: ['Fuga menor de aceite en tapa de valvulas', 'Golpeteo en suspension delantera'], comentarios: ['No asignar rutas largas hasta revision mecanica']},
-    {vehiculoId: 4, deficiencias: [], comentarios: ['Unidad operativa sin observaciones criticas']},
-    {vehiculoId: 5, deficiencias: ['Bateria con voltaje inestable', 'Aire acondicionado sin enfriar'], comentarios: ['Mantener fuera de servicio hasta reemplazo de bateria']},
-    {vehiculoId: 6, deficiencias: ['Sensor de reversa intermitente'], comentarios: ['Verificar cableado del sensor posterior']},
-    {vehiculoId: 7, deficiencias: ['Pastillas de freno al 20%', 'Parabrisas con fisura lateral'], comentarios: ['Cambio de pastillas urgente antes del fin de semana']},
-    {vehiculoId: 8, deficiencias: [], comentarios: ['Estado general bueno', 'Requiere lavado de chasis']},
-    {vehiculoId: 9, deficiencias: ['Puerta copiloto no cierra suavemente'], comentarios: ['Lubricar bisagras y revisar pestillo']},
-    {vehiculoId: 10, deficiencias: ['Ruido en banda auxiliar'], comentarios: ['Revisar tension de banda en proxima parada']},
-    {vehiculoId: 11, deficiencias: ['Luz de check engine encendida'], comentarios: ['Pendiente escaneo OBD para diagnostico']},
-    {vehiculoId: 12, deficiencias: [], comentarios: ['Vehiculo nuevo, sin incidencias registradas']},
-    {vehiculoId: 13, deficiencias: ['Corrosion en terminales de bateria', 'Desalineacion leve'], comentarios: ['Corregir alineacion antes de reactivar unidad']},
-    {vehiculoId: 14, deficiencias: ['Neumatico trasero derecho con baja presion frecuente'], comentarios: ['Revisar posible pinchazo lento']},
-    {vehiculoId: 15, deficiencias: [], comentarios: ['Ultima inspeccion aprobada', 'Lista para operacion diaria']},
-  ];
+  private static readonly VEHICULO_ESTADOS: VehiculoEstadoData[] = [];
 
   private static readonly RUTAS: RutaData[] = [];
+  private static readonly TRABAJADORES: TrabajadorData[] = [];
+  private static readonly ASIGNACIONES = new Map<number, number>();
+
 
   private static getConductorAsignadoNombreByRutaId(rutaId: number): string {
     const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
@@ -315,7 +317,7 @@ export class Datos {
       }
     });
 
-    Datos.ASIGNACIONES.forEach((rutaId, trabajadorId) => {
+    Datos.ASIGNACIONES.forEach((rutaId: number, trabajadorId: number) => {
       byWorkerId.set(trabajadorId, rutaId);
     });
 
@@ -332,7 +334,7 @@ export class Datos {
     return ruta?.nombre ?? '';
   }
 
-  private static toNumber(value: unknown): number | null {
+  static toNumber(value: unknown): number | null {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
     }
@@ -473,7 +475,7 @@ export class Datos {
     };
   }
 
-  private static mapBackendRouteServicesCount(raw: BackendRouteServicesCountPayload): {routeId: number; routeName: string; servicesCount: number} | null {
+  private static mapBackendRouteServicesCount(raw: BackendRouteServicesCountPayload): { routeId: number; routeName: string; servicesCount: number } | null {
     const routeId = Datos.toNumber(raw.routeId);
     if (!routeId) {
       return null;
@@ -486,7 +488,7 @@ export class Datos {
     };
   }
 
-  private static mapBackendRouteStatistics(raw: BackendRouteStatisticsPayload): {routeId: number; metrics: RouteDailyMetrics} | null {
+  private static mapBackendRouteStatistics(raw: BackendRouteStatisticsPayload): { routeId: number; metrics: RouteDailyMetrics } | null {
     const routeId = Datos.toNumber(raw.routeId);
     if (!routeId) {
       return null;
@@ -522,10 +524,10 @@ export class Datos {
 
   private static normalizeServiceLifecycleStatus(raw: BackendServicePayload): ServiceLifecycleStatus {
     const status = String(raw.status ?? '').toLowerCase().trim();
-    
+
     const exactSkipped = ['r', 'skip', 'omit'];
     const partialSkipped = ['skipped', 'saltad', 'no atendido', 'no_atendido', 'retras', 'postpon', 'reprogram'];
-    
+
     if (exactSkipped.includes(status) || partialSkipped.some(t => status.includes(t))) {
       return 'skipped';
     }
@@ -538,7 +540,7 @@ export class Datos {
 
     const exactCompleted = ['c', 'done', 'closed'];
     const partialCompleted = ['completed', 'completado', 'finished', 'finalizado', 'atendido'];
-    
+
     if (exactCompleted.includes(status) || partialCompleted.some(t => status.includes(t))) {
       return 'completed';
     }
@@ -608,7 +610,7 @@ export class Datos {
     return [...new Set(candidates)];
   }
 
-  private static resolveMediaUrl(rawUrl: string | undefined): string | undefined {
+  static resolveMediaUrl(rawUrl: string | undefined): string | undefined {
     if (!rawUrl) {
       return undefined;
     }
@@ -631,7 +633,7 @@ export class Datos {
     return withDate.filter(item => Datos.getServiceIsoDate(item) === targetDate);
   }
 
-  private static getTodayIsoDate(): string {
+  public static getTodayIsoDate(): string {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -680,8 +682,9 @@ export class Datos {
         return;
       }
 
-      if (serviceStatus === 'canceled' || serviceStatus === 'skipped') {
+      if (serviceStatus === 'canceled') {
         destinosCancelados += 1;
+        return;
       }
 
       destinosPendientes += 1;
@@ -721,10 +724,10 @@ export class Datos {
     };
   }
 
-  private static async getRouteServicesCountByDateDesdeBackend(date: string): Promise<Record<number, {routeName: string; servicesCount: number}> | null> {
+  private static async getRouteServicesCountByDateDesdeBackend(date: string): Promise<Record<number, { routeName: string; servicesCount: number }> | null> {
     try {
       const response = await api.get('/routes/services-count', {
-        params: {date},
+        params: { date },
         withCredentials: true,
       });
 
@@ -735,14 +738,14 @@ export class Datos {
 
       return items
         .map(item => Datos.mapBackendRouteServicesCount(item))
-        .filter((item): item is {routeId: number; routeName: string; servicesCount: number} => item !== null)
+        .filter((item): item is { routeId: number; routeName: string; servicesCount: number } => item !== null)
         .reduce((acc, item) => {
           acc[item.routeId] = {
             routeName: item.routeName,
             servicesCount: item.servicesCount,
           };
           return acc;
-        }, {} as Record<number, {routeName: string; servicesCount: number}>);
+        }, {} as Record<number, { routeName: string; servicesCount: number }>);
     } catch {
       return null;
     }
@@ -753,7 +756,7 @@ export class Datos {
       const response = await api.get('/routes/statistics', {
         params: {
           date,
-          ...(typeof routeId === 'number' ? {routeId} : {}),
+          ...(typeof routeId === 'number' ? { routeId } : {}),
         },
         withCredentials: true,
       });
@@ -768,7 +771,7 @@ export class Datos {
 
       return rawItems
         .map(item => Datos.mapBackendRouteStatistics(item))
-        .filter((item): item is {routeId: number; metrics: RouteDailyMetrics} => item !== null)
+        .filter((item): item is { routeId: number; metrics: RouteDailyMetrics } => item !== null)
         .reduce((acc, item) => {
           acc[item.routeId] = item.metrics;
           return acc;
@@ -778,7 +781,7 @@ export class Datos {
     }
   }
 
-  private static async getServiciosPorRutaDesdeBackend(rutaId: number, options?: {date?: string; statuses?: string[]}): Promise<BackendServicePayload[] | null> {
+  private static async getServiciosPorRutaDesdeBackend(rutaId: number, options?: { date?: string; statuses?: string[] }): Promise<BackendServicePayload[] | null> {
     const statuses = options?.statuses ?? ['C', 'P', 'R', 'X', 'I'];
     const date = options?.date ?? Datos.getTodayIsoDate();
 
@@ -834,7 +837,7 @@ export class Datos {
 
   private static async enrichRouteWithServiceMetrics(
     route: RutaData,
-    servicesCountByRoute?: Record<number, {routeName: string; servicesCount: number}> | null,
+    servicesCountByRoute?: Record<number, { routeName: string; servicesCount: number }> | null,
     statisticsByRoute?: Record<number, RouteDailyMetrics> | null,
   ): Promise<RutaData> {
     const serviceCount = servicesCountByRoute?.[route.id]?.servicesCount ?? statisticsByRoute?.[route.id]?.servicesCount ?? null;
@@ -874,7 +877,7 @@ export class Datos {
     }, {} as Record<number, MappedUserDTO>);
   }
 
-  private static extractArrayPayload<T>(payload: unknown): T[] | null {
+  static extractArrayPayload<T>(payload: unknown): T[] | null {
     if (Array.isArray(payload)) {
       return payload as T[];
     }
@@ -892,7 +895,7 @@ export class Datos {
     return null;
   }
 
-  private static extractObjectPayload<T>(payload: unknown): T | null {
+  static extractObjectPayload<T>(payload: unknown): T | null {
     if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
       const objectPayload = payload as Record<string, unknown>;
       const wrapped = objectPayload.data ?? objectPayload.item ?? objectPayload.result;
@@ -906,7 +909,7 @@ export class Datos {
 
   private static async getUsuariosDesdeBackend(): Promise<MappedUserDTO[] | null> {
     try {
-      const response = await api.get(Datos.USERS_ENDPOINT, {withCredentials: true});
+      const response = await api.get(Datos.USERS_ENDPOINT, { withCredentials: true });
       const items = Datos.extractArrayPayload<BackendUserPayload>(response.data);
       if (!items) {
         return null;
@@ -922,7 +925,7 @@ export class Datos {
 
   private static async getUsuarioDesdeBackend(id: number): Promise<MappedUserDTO | null> {
     try {
-      const response = await api.get(`${Datos.USERS_ENDPOINT}/${id}`, {withCredentials: true});
+      const response = await api.get(`${Datos.USERS_ENDPOINT}/${id}`, { withCredentials: true });
       const item = Datos.extractObjectPayload<BackendUserPayload>(response.data);
       if (!item) {
         return null;
@@ -935,7 +938,7 @@ export class Datos {
 
   private static async getRutasDesdeBackend(): Promise<MappedRouteDTO[] | null> {
     try {
-      const response = await api.get('/routes', {withCredentials: true});
+      const response = await api.get('/routes', { withCredentials: true });
       const items = Datos.extractArrayPayload<BackendRoutePayload>(response.data);
       if (!items) {
         return null;
@@ -951,7 +954,7 @@ export class Datos {
 
   private static async getRutaDesdeBackend(id: number): Promise<MappedRouteDTO | null> {
     try {
-      const response = await api.get(`/routes/${id}`, {withCredentials: true});
+      const response = await api.get(`/routes/${id}`, { withCredentials: true });
       const item = Datos.extractObjectPayload<BackendRoutePayload>(response.data);
       if (!item) {
         return null;
@@ -964,7 +967,7 @@ export class Datos {
 
   private static async getInspeccionesDesdeBackend(): Promise<MappedInspection[] | null> {
     try {
-      const response = await api.get('/inspections', {withCredentials: true});
+      const response = await api.get('/inspections', { withCredentials: true });
       const items = Datos.extractArrayPayload<BackendInspectionPayload>(response.data);
       if (!items) {
         return null;
@@ -981,7 +984,7 @@ export class Datos {
   private static async getInspeccionesPorFechaDesdeBackend(date: string): Promise<MappedInspection[] | null> {
     try {
       const response = await api.get('/inspections', {
-        params: {date},
+        params: { date },
         withCredentials: true,
       });
 
@@ -1000,7 +1003,7 @@ export class Datos {
 
   private static async getInspeccionDetalleDesdeBackend(inspectionId: number): Promise<MappedInspection | null> {
     try {
-      const response = await api.get(`/inspections/${inspectionId}`, {withCredentials: true});
+      const response = await api.get(`/inspections/${inspectionId}`, { withCredentials: true });
       const item = Datos.extractObjectPayload<BackendInspectionPayload>(response.data);
       if (!item) {
         return null;
@@ -1014,7 +1017,7 @@ export class Datos {
 
   private static async getInspeccionesPorVehiculoDesdeBackend(vehicleId: number): Promise<MappedInspection[] | null> {
     try {
-      const response = await api.get(`/inspections/vehicle/${vehicleId}`, {withCredentials: true});
+      const response = await api.get(`/inspections/vehicle/${vehicleId}`, { withCredentials: true });
       const items = Datos.extractArrayPayload<BackendInspectionPayload>(response.data);
       if (!items) {
         return null;
@@ -1030,7 +1033,7 @@ export class Datos {
 
   private static async getInspeccionesPorUsuarioDesdeBackend(userId: number): Promise<MappedInspection[] | null> {
     try {
-      const response = await api.get(`/inspections/user/${userId}`, {withCredentials: true});
+      const response = await api.get(`/inspections/user/${userId}`, { withCredentials: true });
       const items = Datos.extractArrayPayload<BackendInspectionPayload>(response.data);
       if (!items) {
         return null;
@@ -1057,7 +1060,7 @@ export class Datos {
     const assigneeId = userId ?? 0;
 
     try {
-      await api.patch(`/routes/${route.id}/assign-user/${assigneeId}`, undefined, {withCredentials: true});
+      await api.patch(`/routes/${route.id}/assign-user/${assigneeId}`, undefined, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1066,7 +1069,7 @@ export class Datos {
 
   static async createVehicle(payload: BackendVehiculoPayload): Promise<boolean> {
     try {
-      await api.post('/vehicles', payload, {withCredentials: true});
+      await api.post('/vehicles', payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1075,7 +1078,7 @@ export class Datos {
 
   static async updateVehicle(id: number, payload: BackendVehiculoPayload): Promise<boolean> {
     try {
-      await api.put(`/vehicles/${id}`, payload, {withCredentials: true});
+      await api.put(`/vehicles/${id}`, payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1084,7 +1087,7 @@ export class Datos {
 
   static async deleteVehicle(id: number): Promise<boolean> {
     try {
-      await api.delete(`/vehicles/${id}`, {withCredentials: true});
+      await api.delete(`/vehicles/${id}`, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1093,7 +1096,7 @@ export class Datos {
 
   static async createRoute(payload: BackendRoutePayload): Promise<boolean> {
     try {
-      await api.post('/routes', payload, {withCredentials: true});
+      await api.post('/routes', payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1102,7 +1105,7 @@ export class Datos {
 
   static async updateRoute(id: number, payload: BackendRoutePayload): Promise<boolean> {
     try {
-      await api.put(`/routes/${id}`, payload, {withCredentials: true});
+      await api.put(`/routes/${id}`, payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1111,7 +1114,7 @@ export class Datos {
 
   static async deleteRoute(id: number): Promise<boolean> {
     try {
-      await api.delete(`/routes/${id}`, {withCredentials: true});
+      await api.delete(`/routes/${id}`, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1120,7 +1123,7 @@ export class Datos {
 
   static async createUser(payload: BackendUserPayload): Promise<boolean> {
     try {
-      await api.post(Datos.USERS_ENDPOINT, payload, {withCredentials: true});
+      await api.post(Datos.USERS_ENDPOINT, payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1129,7 +1132,7 @@ export class Datos {
 
   static async updateUser(id: number, payload: BackendUserPayload): Promise<boolean> {
     try {
-      await api.put(`${Datos.USERS_ENDPOINT}/${id}`, payload, {withCredentials: true});
+      await api.put(`${Datos.USERS_ENDPOINT}/${id}`, payload, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1138,7 +1141,7 @@ export class Datos {
 
   static async deleteUser(id: number): Promise<boolean> {
     try {
-      await api.delete(`${Datos.USERS_ENDPOINT}/${id}`, {withCredentials: true});
+      await api.delete(`${Datos.USERS_ENDPOINT}/${id}`, { withCredentials: true });
       return true;
     } catch {
       return false;
@@ -1155,8 +1158,7 @@ export class Datos {
       if (many && many.length > 0) {
         const byRoute = many.find(item => {
           const evidenceRouteId = Datos.toNumber(item.routeId ?? item.route_id);
-          const evidenceServiceId = Datos.toNumber(item.serviceId);
-          return evidenceRouteId === rutaId || evidenceServiceId === rutaId;
+          return evidenceRouteId === rutaId;
         });
 
         return byRoute ?? many[0];
@@ -1187,7 +1189,7 @@ export class Datos {
     }
   }
 
-  private static async buildEvidenciaDataFromBackend(
+  private static async buildEvidenceDataFromBackend(
     rutaId: number,
     evidenceId: number,
     evidencePayload?: BackendEvidencePayload | null,
@@ -1210,7 +1212,8 @@ export class Datos {
     const estadoAlSalir: ImagenEvidencia[] = [];
     let firmaEncargado: ImagenEvidencia | null = null;
 
-    (images ?? []).forEach((img, idx) => {
+    (images ?? []).forEach((imgItem, idx) => {
+      const img = imgItem as any;
       const id = Datos.toNumber(img.imageId) ?? idx + 1;
       const rawType = img.imageType ?? img.type;
       const type = String(rawType ?? '').toLowerCase();
@@ -1247,8 +1250,8 @@ export class Datos {
     if (!firmaEncargado) {
       const signatureUrl = Datos.resolveMediaUrl(evidencePayload?.signature_url?.trim());
       firmaEncargado = signatureUrl
-        ? {id: -1, descripcion: 'Firma registrada', url: signatureUrl}
-        : {id: -1, descripcion: 'Sin firma registrada'};
+        ? { id: -1, descripcion: 'Firma registrada', url: signatureUrl }
+        : { id: -1, descripcion: 'Sin firma registrada' };
     }
 
     const comentarioPartes = (waste ?? []).map(item => {
@@ -1267,8 +1270,8 @@ export class Datos {
     return {
       rutaId,
       comentario: comentarioPartes.length > 0 ? comentarioPartes.join(' | ') : `Evidencia ${evidenceId}`,
-      estadoAlLlegar: estadoAlLlegar.length > 0 ? estadoAlLlegar : [{id: -2, descripcion: 'Sin imágenes de llegada'}],
-      estadoAlSalir: estadoAlSalir.length > 0 ? estadoAlSalir : [{id: -3, descripcion: 'Sin imágenes de salida'}],
+      estadoAlLlegar: estadoAlLlegar.length > 0 ? estadoAlLlegar : [{ id: -2, descripcion: 'Sin imágenes de llegada' }],
+      estadoAlSalir: estadoAlSalir.length > 0 ? estadoAlSalir : [{ id: -3, descripcion: 'Sin imágenes de salida' }],
       firmaEncargado,
     };
   }
@@ -1285,7 +1288,7 @@ export class Datos {
     }
 
     const serviceStatus = Datos.normalizeServiceLifecycleStatus(raw);
-    if (serviceStatus !== 'skipped' && serviceStatus !== 'canceled') {
+    if (serviceStatus !== 'canceled') {
       return null;
     }
 
@@ -1296,7 +1299,7 @@ export class Datos {
       rutaId,
       storeName: raw.storeName ?? raw.destination ?? raw.address ?? `Servicio ${id}`,
       comentario:
-        comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
+        comentario || 'Servicio cancelado durante el recorrido.',
     };
   }
 
@@ -1353,7 +1356,7 @@ export class Datos {
 
     for (const endpoint of endpoints) {
       try {
-        const response = await api.get(endpoint, {withCredentials: true});
+        const response = await api.get(endpoint, { withCredentials: true });
         const images = tryExtractImages(response.data);
         if (images && images.length > 0) {
           return images;
@@ -1365,7 +1368,7 @@ export class Datos {
 
     try {
       const response = await api.get('/images', {
-        params: {evidenceId},
+        params: { evidenceId },
         withCredentials: true,
       });
       const images = tryExtractImages(response.data);
@@ -1381,8 +1384,8 @@ export class Datos {
 
   private static async getEvidenceWasteByEvidenceFromBackend(evidenceId: number): Promise<MappedEvidenceWaste[] | null> {
     try {
-      const response = await api.get(`/evidence-waste/evidence/${evidenceId}`, {withCredentials: true});
-      const items = Datos.extractArrayPayload<BackendEvidenceWastePayload>(response.data);
+      const response = await api.get(`/evidence-waste/evidence/${evidenceId}`, { withCredentials: true });
+      const items = Datos.extractArrayPayload<BackendEvidenceWaste>(response.data);
       if (!items) {
         return null;
       }
@@ -1409,7 +1412,7 @@ export class Datos {
   private static async getVehiculosDesdeBackend(): Promise<VehiculoData[] | null> {
     try {
       const [vehiclesResponse, inspections] = await Promise.all([
-        api.get('/vehicles', {withCredentials: true}),
+        api.get('/vehicles', { withCredentials: true }),
         Datos.getInspeccionesDesdeBackend(),
       ]);
 
@@ -1447,7 +1450,7 @@ export class Datos {
   private static async getVehiculoDesdeBackend(id: number): Promise<VehiculoData | null> {
     try {
       const [vehicleResponse, inspections] = await Promise.all([
-        api.get(`/vehicles/${id}`, {withCredentials: true}),
+        api.get(`/vehicles/${id}`, { withCredentials: true }),
         Datos.getInspeccionesPorVehiculoDesdeBackend(id),
       ]);
 
@@ -1520,7 +1523,7 @@ export class Datos {
     const payload = {
       username: usuario.trim(),
       password: contrasena,
-      ...(typeof persistence === 'boolean' ? {persistence} : {}),
+      ...(typeof persistence === 'boolean' ? { persistence } : {}),
     };
 
     const baseUrlCandidates = getApiBaseUrlCandidates();
@@ -1550,7 +1553,7 @@ export class Datos {
 
         // The backend uses HttpOnly session cookie, so we keep a local auth marker
         // to preserve current app flow with minimal structural changes.
-        return {token: 'session-cookie', username: usuario};
+        return { token: 'session-cookie', username: usuario };
       } catch (rawError) {
         const apiError = rawError as ApiError;
         const isNetworkError = !apiError.status;
@@ -1577,11 +1580,11 @@ export class Datos {
   }
 
   static async getMenuItems(): Promise<OpcionMenu[]> {
-    return Datos.MENU.map(item => ({...item}));
+    return Datos.MENU.map(item => ({ ...item }));
   }
 
   static async getRutaAcciones(): Promise<AccionRuta[]> {
-    return Datos.RUTA_ACCIONES.map(accion => ({...accion}));
+    return Datos.RUTA_ACCIONES.map(accion => ({ ...accion }));
   }
 
   static async getRutas(): Promise<RutaData[]> {
@@ -1590,36 +1593,28 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (routes && routes.length > 0) {
-      const usersById = Datos.buildUsersById(users ?? []);
-      const today = Datos.getTodayIsoDate();
-      const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
-        Datos.getRouteServicesCountByDateDesdeBackend(today),
-        Datos.getRouteStatisticsByDateDesdeBackend(today),
-      ]);
-
-      const mappedRoutes = routes.map(route =>
-        Datos.mapRouteToUI(
-          {
-            ...route,
-            userId: route.userId ?? null,
-          },
-          usersById,
-        ),
-      );
-
-      return Promise.all(mappedRoutes.map(route => Datos.enrichRouteWithServiceMetrics(route, servicesCountByRoute, statisticsByRoute)));
+    if (!routes || routes.length === 0) {
+      return [];
     }
 
-    return Datos.RUTAS.map(ruta => {
-      const mapped = Datos.mapRutaConConductorAsignado(ruta);
-      const pendientesTotales = mapped.destinosPendientes + mapped.destinosCancelados;
-      return {
-        ...mapped,
-        destinosPendientes: pendientesTotales,
-        destinosCancelados: 0,
-      };
-    });
+    const usersById = Datos.buildUsersById(users ?? []);
+    const today = Datos.getTodayIsoDate();
+    const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
+      Datos.getRouteServicesCountByDateDesdeBackend(today),
+      Datos.getRouteStatisticsByDateDesdeBackend(today),
+    ]);
+
+    const mappedRoutes = routes.map(route =>
+      Datos.mapRouteToUI(
+        {
+          ...route,
+          userId: route.userId ?? null,
+        },
+        usersById,
+      ),
+    );
+
+    return Promise.all(mappedRoutes.map(route => Datos.enrichRouteWithServiceMetrics(route, servicesCountByRoute, statisticsByRoute)));
   }
 
   static async getRutaById(id: number): Promise<RutaData | null> {
@@ -1628,60 +1623,33 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (route) {
-      const usersById = Datos.buildUsersById(users ?? []);
-      const mapped = Datos.mapRouteToUI(route, usersById);
-      const today = Datos.getTodayIsoDate();
-      const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
-        Datos.getRouteServicesCountByDateDesdeBackend(today),
-        Datos.getRouteStatisticsByDateDesdeBackend(today, id),
-      ]);
-
-      return Datos.enrichRouteWithServiceMetrics(mapped, servicesCountByRoute, statisticsByRoute);
-    }
-
-    const ruta = Datos.RUTAS.find(item => item.id === id);
-    if (!ruta) {
+    if (!route) {
       return null;
     }
 
-    const mapped = Datos.mapRutaConConductorAsignado(ruta);
-    return {
-      ...mapped,
-      destinosPendientes: mapped.destinosPendientes + mapped.destinosCancelados,
-      destinosCancelados: 0,
-    };
+    const usersById = Datos.buildUsersById(users ?? []);
+    const mapped = Datos.mapRouteToUI(route, usersById);
+    const today = Datos.getTodayIsoDate();
+    const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
+      Datos.getRouteServicesCountByDateDesdeBackend(today),
+      Datos.getRouteStatisticsByDateDesdeBackend(today, id),
+    ]);
+
+    return Datos.enrichRouteWithServiceMetrics(mapped, servicesCountByRoute, statisticsByRoute);
   }
 
-  
+
 
   private static readonly DESTINOS_CANCELADOS: DestinoCanceladoData[] = [];
 
   static async getVehiculos(): Promise<VehiculoData[]> {
     const backendData = await Datos.getVehiculosDesdeBackend();
-    if (backendData && backendData.length > 0) {
-      return backendData;
-    }
-
-    return Datos.VEHICULOS.map(v => ({
-      ...v,
-      rutaAsignada: Datos.getRutaAsignadaNombreByVehiculoId(v.id),
-    }));
+    return backendData ?? [];
   }
 
   static async getVehiculoById(id: number): Promise<VehiculoData | null> {
     const backendData = await Datos.getVehiculoDesdeBackend(id);
-    if (backendData) {
-      return backendData;
-    }
-
-    const vehiculo = Datos.VEHICULOS.find(item => item.id === id);
-    return vehiculo
-      ? {
-          ...vehiculo,
-          rutaAsignada: Datos.getRutaAsignadaNombreByVehiculoId(vehiculo.id),
-        }
-      : null;
+    return backendData;
   }
 
   static async getVehiculoAsignadoPorRutaId(rutaId: number): Promise<VehiculoData | null> {
@@ -1707,63 +1675,24 @@ export class Datos {
       }
     }
 
-    const localRoute = Datos.RUTAS.find(item => item.id === rutaId);
-    if (!localRoute?.vehiculoAsignado) {
-      return null;
-    }
-
-    const localVehicle = Datos.VEHICULOS.find(item => item.placa === localRoute.vehiculoAsignado);
-    if (!localVehicle) {
-      return null;
-    }
-
-    const vehicle = await Datos.getVehiculoById(localVehicle.id);
-    if (!vehicle) {
-      return null;
-    }
-
-    return {
-      ...vehicle,
-      rutaAsignada: localRoute.nombre,
-    };
+    return null;
   }
 
   static async getVehiculoEstadoById(id: number): Promise<VehiculoEstadoData | null> {
     const backendData = await Datos.getVehiculoEstadoDesdeBackend(id);
-    if (backendData) {
-      return backendData;
-    }
-
-    const estado = Datos.VEHICULO_ESTADOS.find(item => item.vehiculoId === id);
-    if (!estado) {
-      return null;
-    }
-    return {
-      vehiculoId: estado.vehiculoId,
-      deficiencias: [...estado.deficiencias],
-      comentarios: [...estado.comentarios],
-    };
+    return backendData;
   }
 
-  private static readonly TRABAJADORES: TrabajadorData[] = [];
+
 
   static async getTrabajadores(): Promise<TrabajadorData[]> {
     const users = await Datos.getUsuariosDesdeBackend();
-    if (users && users.length > 0) {
-      return users.map(Datos.mapUserToTrabajador);
-    }
-
-    return Datos.TRABAJADORES.map(t => ({...t}));
+    return users?.map(Datos.mapUserToTrabajador) ?? [];
   }
 
   static async getTrabajadorById(id: number): Promise<TrabajadorData | null> {
     const user = await Datos.getUsuarioDesdeBackend(id);
-    if (user) {
-      return Datos.mapUserToTrabajador(user);
-    }
-
-    const trabajador = Datos.TRABAJADORES.find(item => item.id === id);
-    return trabajador ? {...trabajador} : null;
+    return user ? Datos.mapUserToTrabajador(user) : null;
   }
 
   static async getConductoresSinRuta(): Promise<TrabajadorData[]> {
@@ -1772,22 +1701,19 @@ export class Datos {
       Datos.getRutasDesdeBackend(),
     ]);
 
-    if (users && routes) {
-      const assignedUserIds = new Set<number>(
-        routes
-          .map(route => route.userId)
-          .filter((userId): userId is number => typeof userId === 'number'),
-      );
-
-      return users
-        .filter(user => user.tipo === 'conductor' && !assignedUserIds.has(user.id))
-        .map(Datos.mapUserToTrabajador);
+    if (!users || !routes) {
+      return [];
     }
 
-    const conductoresTomados = new Set<number>(Datos.getFallbackAssignedByWorkerId().keys());
-    return Datos.TRABAJADORES
-      .filter(item => item.tipo === 'conductor' && !conductoresTomados.has(item.id))
-      .map(item => ({...item}));
+    const assignedUserIds = new Set<number>(
+      routes
+        .map(route => route.userId)
+        .filter((userId): userId is number => typeof userId === 'number'),
+    );
+
+    return users
+      .filter(user => user.tipo === 'conductor' && !assignedUserIds.has(user.id))
+      .map(Datos.mapUserToTrabajador);
   }
 
   static async getConductoresParaRuta(rutaId: number): Promise<TrabajadorData[]> {
@@ -1796,32 +1722,24 @@ export class Datos {
       Datos.getRutasDesdeBackend(),
     ]);
 
-    if (users && routes) {
-      const assignedByUser = new Map<number, number>();
-      routes.forEach(route => {
-        if (typeof route.userId === 'number') {
-          assignedByUser.set(route.userId, route.id);
-        }
-      });
-
-      return users
-        .filter(user => user.tipo === 'conductor')
-        .filter(user => {
-          const assignedRouteId = assignedByUser.get(user.id);
-          return !assignedRouteId || assignedRouteId === rutaId;
-        })
-        .map(Datos.mapUserToTrabajador);
+    if (!users || !routes) {
+      return [];
     }
 
-    const assignedByUser = Datos.getFallbackAssignedByWorkerId();
+    const assignedByUser = new Map<number, number>();
+    routes.forEach(route => {
+      if (typeof route.userId === 'number') {
+        assignedByUser.set(route.userId, route.id);
+      }
+    });
 
-    return Datos.TRABAJADORES
-      .filter(item => item.tipo === 'conductor')
-      .filter(item => {
-        const assignedRouteId = assignedByUser.get(item.id);
+    return users
+      .filter(user => user.tipo === 'conductor')
+      .filter(user => {
+        const assignedRouteId = assignedByUser.get(user.id);
         return !assignedRouteId || assignedRouteId === rutaId;
       })
-      .map(item => ({...item}));
+      .map(Datos.mapUserToTrabajador);
   }
 
   static async getConductorAsignadoPorRutaId(rutaId: number): Promise<TrabajadorData | null> {
@@ -1842,13 +1760,6 @@ export class Datos {
       }
     }
 
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    for (const [trabajadorId, assignedRouteId] of assignedByWorker.entries()) {
-      if (assignedRouteId === rutaId) {
-        const conductor = Datos.TRABAJADORES.find(item => item.id === trabajadorId && item.tipo === 'conductor');
-        return conductor ? {...conductor} : null;
-      }
-    }
     return null;
   }
 
@@ -1858,68 +1769,34 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (route && users) {
-      const trabajador = users.find(item => item.id === trabajadorId);
-      if (!trabajador || trabajador.tipo !== 'conductor') {
-        return {ok: false, reason: 'invalid-worker'};
-      }
-
-      const previousRoute = await Datos.findAssignedRouteForUserBackend(trabajadorId);
-      if (previousRoute && previousRoute.id !== rutaId) {
-        const released = await Datos.assignRouteToUserOnBackend(previousRoute, null);
-        if (!released) {
-          return {ok: false, reason: 'already-assigned'};
-        }
-      }
-
-      const assigned = await Datos.assignRouteToUserOnBackend(route, trabajadorId);
-      if (assigned) {
-        return {ok: true};
-      }
-
-      return {ok: false, reason: 'invalid-route'};
+    if (!route || !users) {
+      return { ok: false, reason: 'invalid-route' };
     }
 
-    const trabajador = Datos.TRABAJADORES.find(item => item.id === trabajadorId);
+    const trabajador = users.find(item => item.id === trabajadorId);
     if (!trabajador || trabajador.tipo !== 'conductor') {
-      return {ok: false, reason: 'invalid-worker'};
+      return { ok: false, reason: 'invalid-worker' };
     }
 
-    const ruta = Datos.RUTAS.find(item => item.id === rutaId);
-    if (!ruta) {
-      return {ok: false, reason: 'invalid-route'};
-    }
-
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    const rutaActual = assignedByWorker.get(trabajadorId);
-    if (rutaActual && rutaActual !== rutaId) {
-      return {ok: false, reason: 'already-assigned'};
-    }
-
-    for (const [conductorId, assignedRouteId] of assignedByWorker.entries()) {
-      if (assignedRouteId === rutaId && conductorId !== trabajadorId) {
-        return {ok: false, reason: 'route-taken'};
+    const previousRoute = await Datos.findAssignedRouteForUserBackend(trabajadorId);
+    if (previousRoute && previousRoute.id !== rutaId) {
+      const released = await Datos.assignRouteToUserOnBackend(previousRoute, null);
+      if (!released) {
+        return { ok: false, reason: 'already-assigned' };
       }
     }
 
-    Datos.ASIGNACIONES.set(trabajadorId, rutaId);
-    return {ok: true};
+    const assigned = await Datos.assignRouteToUserOnBackend(route, trabajadorId);
+    return assigned ? { ok: true } : { ok: false, reason: 'invalid-route' };
   }
 
   static async desasignarRuta(trabajadorId: number): Promise<boolean> {
     const route = await Datos.findAssignedRouteForUserBackend(trabajadorId);
-    if (route) {
-      const released = await Datos.assignRouteToUserOnBackend(route, null);
-      if (released) {
-        return true;
-      }
-
-      // If backend assignment update fails, keep local state operable.
-      Datos.ASIGNACIONES.delete(trabajadorId);
-      return true;
+    if (!route) {
+      return false;
     }
 
-    return Datos.ASIGNACIONES.delete(trabajadorId);
+    return Datos.assignRouteToUserOnBackend(route, null);
   }
 
   static async asignarConductorARuta(trabajadorId: number, rutaId: number): Promise<AsignacionRutaResult> {
@@ -1939,7 +1816,7 @@ export class Datos {
 
     const removed = await Datos.desasignarRuta(trabajadorId);
     if (!removed) {
-      return {ok: false, reason: 'already-assigned'};
+      return { ok: false, reason: 'already-assigned' };
     }
 
     return Datos.asignarRutaAConductor(trabajadorId, rutaId);
@@ -1954,12 +1831,7 @@ export class Datos {
       return Datos.mapRouteToUI(route, usersById);
     }
 
-    const rutaId = Datos.getFallbackAssignedByWorkerId().get(trabajadorId);
-    if (!rutaId) {
-      return null;
-    }
-    const ruta = Datos.RUTAS.find(item => item.id === rutaId);
-    return ruta ? Datos.mapRutaConConductorAsignado(ruta) : null;
+    return null;
   }
 
   static async getRutasDisponiblesParaConductor(trabajadorId: number): Promise<RutaData[]> {
@@ -1968,21 +1840,15 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (routes && users) {
-      const usersById = Datos.buildUsersById(users);
-
-      return routes
-        .filter(route => !route.userId || route.userId === trabajadorId)
-        .map(route => Datos.mapRouteToUI(route, usersById));
+    if (!routes || !users) {
+      return [];
     }
 
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    const rutaAsignada = assignedByWorker.get(trabajadorId);
-    const rutasTomadas = new Set<number>(assignedByWorker.values());
-    if (rutaAsignada) {
-      rutasTomadas.delete(rutaAsignada);
-    }
-    return Datos.RUTAS.filter(ruta => !rutasTomadas.has(ruta.id)).map(ruta => Datos.mapRutaConConductorAsignado(ruta));
+    const usersById = Datos.buildUsersById(users);
+
+    return routes
+      .filter(route => !route.userId || route.userId === trabajadorId)
+      .map(route => Datos.mapRouteToUI(route, usersById));
   }
 
   static async getRutasAsignadasPorConductores(trabajadorIds: number[]): Promise<Record<number, string>> {
@@ -1992,30 +1858,17 @@ export class Datos {
 
     const uniqueIds = new Set(trabajadorIds);
     const routes = await Datos.getRutasDesdeBackend();
-    if (routes) {
-      const assigned: Record<number, string> = {};
-      routes.forEach(route => {
-        if (typeof route.userId === 'number' && uniqueIds.has(route.userId)) {
-          assigned[route.userId] = route.nombre;
-        }
-      });
-      return assigned;
+    if (!routes) {
+      return {};
     }
 
-    const localAssigned: Record<number, string> = {};
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    assignedByWorker.forEach((routeId, trabajadorId) => {
-      if (!uniqueIds.has(trabajadorId)) {
-        return;
-      }
-
-      const ruta = Datos.RUTAS.find(item => item.id === routeId);
-      if (ruta) {
-        localAssigned[trabajadorId] = ruta.nombre;
+    const assigned: Record<number, string> = {};
+    routes.forEach(route => {
+      if (typeof route.userId === 'number' && uniqueIds.has(route.userId)) {
+        assigned[route.userId] = route.nombre;
       }
     });
-
-    return localAssigned;
+    return assigned;
   }
 
   static async getEvidenciasByRutaId(rutaId: number): Promise<EvidenciaData | null> {
@@ -2023,20 +1876,10 @@ export class Datos {
     const evidenceId = Datos.toNumber(evidence?.evidenceId);
 
     if (evidenceId) {
-      return Datos.buildEvidenciaDataFromBackend(rutaId, evidenceId, evidence);
+      return Datos.buildEvidenceDataFromBackend(rutaId, evidenceId, evidence);
     }
 
-    const ev = Datos.EVIDENCIAS.find(item => item.rutaId === rutaId);
-    if (!ev) {
-      return null;
-    }
-    return {
-      rutaId: ev.rutaId,
-      comentario: ev.comentario,
-      estadoAlLlegar: ev.estadoAlLlegar.map(img => ({...img})),
-      estadoAlSalir: ev.estadoAlSalir.map(img => ({...img})),
-      firmaEncargado: {...ev.firmaEncargado},
-    };
+    return null;
   }
 
   static async getServiciosConEstadoByRutaId(
@@ -2044,7 +1887,7 @@ export class Datos {
     date?: string,
     statuses: string[] = ['C', 'P', 'R', 'X', 'I'],
   ): Promise<RutaServicioData[]> {
-    const services = await Datos.getServiciosPorRutaDesdeBackend(rutaId, {date, statuses});
+    const services = await Datos.getServiciosPorRutaDesdeBackend(rutaId, { date, statuses });
     if (services && services.length > 0) {
       return services
         .map(item => Datos.mapBackendServiceToRutaServicio(item, rutaId))
@@ -2060,7 +1903,7 @@ export class Datos {
     const evidenceId = Datos.toNumber(evidence?.evidenceId);
 
     if (evidenceId) {
-      return Datos.buildEvidenciaDataFromBackend(rutaId, evidenceId, evidence);
+      return Datos.buildEvidenceDataFromBackend(rutaId, evidenceId, evidence);
     }
 
     return null;
@@ -2072,28 +1915,17 @@ export class Datos {
       return backendData;
     }
 
-    const skippedServices = await Datos.getServiciosConEstadoByRutaId(
+    const canceledServices = await Datos.getServiciosConEstadoByRutaId(
       rutaId,
       Datos.getTodayIsoDate(),
       ['X', 'R'],
     );
 
-    const mappedSkipped = skippedServices.map(service => ({
+    return canceledServices.map(service => ({
       id: service.id,
       rutaId,
       storeName: service.storeName,
       comentario: service.comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
     }));
-
-    if (mappedSkipped.length > 0) {
-      return mappedSkipped;
-    }
-
-    return Datos.DESTINOS_CANCELADOS
-      .filter(item => item.rutaId === rutaId)
-      .map(item => ({
-        ...item,
-        comentario: item.comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
-      }));
   }
 }

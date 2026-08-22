@@ -1,5 +1,5 @@
-import {api} from './api';
-import {Datos} from './datos';
+import { api } from './api';
+import { Datos } from './datos';
 
 // Interfaces mapping directly to the unified API response
 export interface BackendEvidenceWaste {
@@ -25,7 +25,12 @@ export interface BackendEvidenceImage {
 
 export interface BackendEvidencePayload {
   service_id: number;
+  evidenceId?: number;
+  evidence_id?: number;
+  routeId?: number;
+  route_id?: number;
   wastes: BackendEvidenceWaste[];
+  images?: BackendEvidenceImage[];
   pre_images: BackendEvidenceImage[];
   post_images: BackendEvidenceImage[];
   skipped_service_images: BackendEvidenceImage[];
@@ -116,7 +121,7 @@ export class EvidenceService {
       preImages: (raw.pre_images ?? []).map(img => EvidenceService.mapImage(img)),
       postImages: (raw.post_images ?? []).map(img => EvidenceService.mapImage(img)),
       skippedImages: (raw.skipped_service_images ?? []).map(img => EvidenceService.mapImage(img)),
-      signatureUrl: Datos.resolveMediaUrl(raw.signature_url),
+      signatureUrl: Datos.resolveMediaUrl(raw.signature_url ?? undefined) ?? null,
       signatory: raw.signatory ? raw.signatory.trim() : null,
       observation: raw.observation ? raw.observation.trim() : null,
       skippedDescription: raw.skipped_service_description ? raw.skipped_service_description.trim() : null,
@@ -130,7 +135,7 @@ export class EvidenceService {
   private static mapImage(raw: BackendEvidenceImage): EvidenceImage {
     return {
       id: Datos.toNumber(raw.imageId) ?? 0,
-      url: Datos.resolveMediaUrl(raw.imageUrl) ?? '',
+      url: Datos.resolveMediaUrl(raw.imageUrl ?? undefined) ?? '',
       type: raw.imageType ? raw.imageType.trim() : 'UNKNOWN',
     };
   }

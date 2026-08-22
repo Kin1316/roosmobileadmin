@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primarySoft,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: theme.radii.full,
+    borderRadius: theme.radii.pill,
   },
   wasteBadgeText: {
     color: theme.colors.primary,
