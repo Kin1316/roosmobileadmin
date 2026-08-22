@@ -19,7 +19,7 @@ export interface AccionRuta {
   messageKey: 'rutas.showEvidenceMessage' | 'rutas.truckStatusMessage' | 'rutas.canceledDestinationsMessage';
 }
 
-export type ServiceLifecycleStatus = 'completed' | 'pending' | 'canceled' | 'skipped';
+export type ServiceLifecycleStatus = 'completed' | 'pending' | 'canceled' | 'in_progress' | 'delayed';
 
 export interface RutaData {
   id: number;
@@ -43,8 +43,6 @@ export interface VehiculoData {
   kilometraje: number;
   rutaAsignada: string;
 }
-
-type VehiculoCatalogoData = Omit<VehiculoData, 'rutaAsignada'>;
 
 export interface TrabajadorData {
   id: number;
@@ -271,8 +269,6 @@ interface RouteDailyMetrics {
 }
 
 export class Datos {
-  // One-to-one relation: each conductor has at most one route, and each route at most one conductor.
-  private static readonly ASIGNACIONES: Map<number, number> = new Map();
   private static readonly USERS_ENDPOINT = '/users';
 
   private static readonly MENU: OpcionMenu[] = [
@@ -286,114 +282,6 @@ export class Datos {
     {id: 2, labelKey: 'rutas.truckStatus', messageKey: 'rutas.truckStatusMessage'},
     {id: 3, labelKey: 'rutas.canceledDestinations', messageKey: 'rutas.canceledDestinationsMessage'},
   ];
-
-  private static readonly VEHICULOS: VehiculoCatalogoData[] = [
-    {id: 1, placa: 'ABC-123', marca: 'Toyota', modelo: 'Hilux', anio: 2019, estado: 'activo', kilometraje: 45230},
-    {id: 2, placa: 'DEF-456', marca: 'Ford', modelo: 'Ranger', anio: 2020, estado: 'activo', kilometraje: 38750},
-    {id: 3, placa: 'GHI-789', marca: 'Chevrolet', modelo: 'S10', anio: 2018, estado: 'mantenimiento', kilometraje: 62100},
-    {id: 4, placa: 'JKL-012', marca: 'Nissan', modelo: 'Frontier', anio: 2021, estado: 'activo', kilometraje: 21400},
-    {id: 5, placa: 'MNO-345', marca: 'Mitsubishi', modelo: 'L200', anio: 2017, estado: 'inactivo', kilometraje: 89600},
-    {id: 6, placa: 'PQR-678', marca: 'Toyota', modelo: 'Land Cruiser', anio: 2022, estado: 'activo', kilometraje: 12300},
-    {id: 7, placa: 'STU-901', marca: 'Ford', modelo: 'F-150', anio: 2019, estado: 'mantenimiento', kilometraje: 54800},
-    {id: 8, placa: 'VWX-234', marca: 'Isuzu', modelo: 'D-Max', anio: 2020, estado: 'activo', kilometraje: 33900},
-    {id: 9, placa: 'YZA-567', marca: 'Hyundai', modelo: 'Santa Cruz', anio: 2021, estado: 'activo', kilometraje: 28700},
-    {id: 10, placa: 'BCD-890', marca: 'Mazda', modelo: 'BT-50', anio: 2018, estado: 'mantenimiento', kilometraje: 67750},
-    {id: 11, placa: 'EFG-123', marca: 'Volkswagen', modelo: 'Amarok', anio: 2019, estado: 'activo', kilometraje: 49980},
-    {id: 12, placa: 'HIJ-456', marca: 'RAM', modelo: '1500', anio: 2022, estado: 'activo', kilometraje: 18120},
-    {id: 13, placa: 'KLM-789', marca: 'Great Wall', modelo: 'Wingle 7', anio: 2020, estado: 'inactivo', kilometraje: 74300},
-    {id: 14, placa: 'NOP-012', marca: 'JAC', modelo: 'T8', anio: 2021, estado: 'activo', kilometraje: 31240},
-    {id: 15, placa: 'QRS-345', marca: 'Peugeot', modelo: 'Landtrek', anio: 2023, estado: 'activo', kilometraje: 9400},
-  ];
-
-  private static readonly VEHICULO_ESTADOS: VehiculoEstadoData[] = [
-    {vehiculoId: 1, deficiencias: ['Luz trasera derecha intermitente', 'Desgaste en llanta delantera izquierda'], comentarios: ['Programar cambio de foco esta semana', 'Rotacion de llantas recomendada']},
-    {vehiculoId: 2, deficiencias: ['Freno de mano con recorrido largo'], comentarios: ['Ajustar cable en proximo mantenimiento preventivo']},
-    {vehiculoId: 3, deficiencias: ['Fuga menor de aceite en tapa de valvulas', 'Golpeteo en suspension delantera'], comentarios: ['No asignar rutas largas hasta revision mecanica']},
-    {vehiculoId: 4, deficiencias: [], comentarios: ['Unidad operativa sin observaciones criticas']},
-    {vehiculoId: 5, deficiencias: ['Bateria con voltaje inestable', 'Aire acondicionado sin enfriar'], comentarios: ['Mantener fuera de servicio hasta reemplazo de bateria']},
-    {vehiculoId: 6, deficiencias: ['Sensor de reversa intermitente'], comentarios: ['Verificar cableado del sensor posterior']},
-    {vehiculoId: 7, deficiencias: ['Pastillas de freno al 20%', 'Parabrisas con fisura lateral'], comentarios: ['Cambio de pastillas urgente antes del fin de semana']},
-    {vehiculoId: 8, deficiencias: [], comentarios: ['Estado general bueno', 'Requiere lavado de chasis']},
-    {vehiculoId: 9, deficiencias: ['Puerta copiloto no cierra suavemente'], comentarios: ['Lubricar bisagras y revisar pestillo']},
-    {vehiculoId: 10, deficiencias: ['Ruido en banda auxiliar'], comentarios: ['Revisar tension de banda en proxima parada']},
-    {vehiculoId: 11, deficiencias: ['Luz de check engine encendida'], comentarios: ['Pendiente escaneo OBD para diagnostico']},
-    {vehiculoId: 12, deficiencias: [], comentarios: ['Vehiculo nuevo, sin incidencias registradas']},
-    {vehiculoId: 13, deficiencias: ['Corrosion en terminales de bateria', 'Desalineacion leve'], comentarios: ['Corregir alineacion antes de reactivar unidad']},
-    {vehiculoId: 14, deficiencias: ['Neumatico trasero derecho con baja presion frecuente'], comentarios: ['Revisar posible pinchazo lento']},
-    {vehiculoId: 15, deficiencias: [], comentarios: ['Ultima inspeccion aprobada', 'Lista para operacion diaria']},
-  ];
-
-  private static readonly RUTAS: RutaData[] = [
-    {id: 1, nombre: 'Ruta 1', conductor: 'Carlos Pérez', vehiculoAsignado: 'ABC-123', completado: 12, destinosCompletados: 1, ultimoDestino: 'Mercado Central', destinosPendientes: 6, destinosCancelados: 1},
-    {id: 2, nombre: 'Ruta 2', conductor: 'Ana López', vehiculoAsignado: '', completado: 25, destinosCompletados: 2, ultimoDestino: 'Av. Terminal Norte', destinosPendientes: 5, destinosCancelados: 0},
-    {id: 3, nombre: 'Ruta 3', conductor: 'Luis García', vehiculoAsignado: '', completado: 34, destinosCompletados: 3, ultimoDestino: 'Sector San Martín', destinosPendientes: 4, destinosCancelados: 1},
-    {id: 4, nombre: 'Ruta 4', conductor: 'María Torres', vehiculoAsignado: '', completado: 41, destinosCompletados: 4, ultimoDestino: 'Parque Industrial', destinosPendientes: 4, destinosCancelados: 0},
-    {id: 5, nombre: 'Ruta 5', conductor: 'Jorge Díaz', vehiculoAsignado: '', completado: 50, destinosCompletados: 5, ultimoDestino: 'Urbanización Los Olivos', destinosPendientes: 3, destinosCancelados: 1},
-    {id: 6, nombre: 'Ruta 6', conductor: 'Sofía Ramírez', vehiculoAsignado: '', completado: 58, destinosCompletados: 6, ultimoDestino: 'Balneario Huanchaco', destinosPendientes: 3, destinosCancelados: 0},
-    {id: 7, nombre: 'Ruta 7', conductor: 'Pedro Castillo', vehiculoAsignado: '', completado: 63, destinosCompletados: 6, ultimoDestino: 'Plaza Pueblo Libre', destinosPendientes: 3, destinosCancelados: 1},
-    {id: 8, nombre: 'Ruta 8', conductor: 'Lucía Herrera', vehiculoAsignado: '', completado: 69, destinosCompletados: 7, ultimoDestino: 'Mercado Santa Anita', destinosPendientes: 2, destinosCancelados: 0},
-    {id: 9, nombre: 'Ruta 9', conductor: 'Diego Flores', vehiculoAsignado: '', completado: 74, destinosCompletados: 7, ultimoDestino: 'Malecón Barranco', destinosPendientes: 2, destinosCancelados: 1},
-    {id: 10, nombre: 'Ruta 10', conductor: 'Valentina Cruz', vehiculoAsignado: '', completado: 81, destinosCompletados: 8, ultimoDestino: 'Parque Miraflores', destinosPendientes: 2, destinosCancelados: 0},
-    {id: 11, nombre: 'Ruta 11', conductor: 'Miguel Rojas', vehiculoAsignado: '', completado: 87, destinosCompletados: 9, ultimoDestino: 'Comas Sector 3', destinosPendientes: 1, destinosCancelados: 1},
-    {id: 12, nombre: 'Ruta 12', conductor: 'Camila Vega', vehiculoAsignado: '', completado: 93, destinosCompletados: 9, ultimoDestino: 'Chorrillos Costero', destinosPendientes: 1, destinosCancelados: 0},
-    {id: 13, nombre: 'Ruta 13', conductor: 'Andrés Molina', vehiculoAsignado: '', completado: 95, destinosCompletados: 10, ultimoDestino: 'La Molina Residencial', destinosPendientes: 1, destinosCancelados: 0},
-    {id: 14, nombre: 'Ruta 14', conductor: 'Renata Silva', vehiculoAsignado: '', completado: 97, destinosCompletados: 10, ultimoDestino: 'Ate Industrial', destinosPendientes: 1, destinosCancelados: 1},
-    {id: 15, nombre: 'Ruta 15', conductor: 'Bruno Navarro', vehiculoAsignado: '', completado: 100, destinosCompletados: 10, ultimoDestino: 'Callao Centro', destinosPendientes: 0, destinosCancelados: 0},
-  ];
-
-  private static getConductorAsignadoNombreByRutaId(rutaId: number): string {
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    for (const [trabajadorId, assignedRouteId] of assignedByWorker.entries()) {
-      if (assignedRouteId === rutaId) {
-        const conductor = Datos.TRABAJADORES.find(item => item.id === trabajadorId);
-        return conductor?.nombre ?? '';
-      }
-    }
-    return '';
-  }
-
-  private static mapRutaConConductorAsignado(ruta: RutaData): RutaData {
-    const conductorAsignado = Datos.getConductorAsignadoNombreByRutaId(ruta.id);
-    return {
-      ...ruta,
-      conductor: conductorAsignado || ruta.conductor,
-    };
-  }
-
-  private static getFallbackAssignedByWorkerId(): Map<number, number> {
-    const byWorkerId = new Map<number, number>();
-
-    Datos.RUTAS.forEach(ruta => {
-      const conductorNombre = ruta.conductor.trim().toLowerCase();
-      if (!conductorNombre) {
-        return;
-      }
-
-      const conductor = Datos.TRABAJADORES.find(
-        item => item.tipo === 'conductor' && item.nombre.trim().toLowerCase() === conductorNombre,
-      );
-
-      if (conductor) {
-        byWorkerId.set(conductor.id, ruta.id);
-      }
-    });
-
-    Datos.ASIGNACIONES.forEach((rutaId, trabajadorId) => {
-      byWorkerId.set(trabajadorId, rutaId);
-    });
-
-    return byWorkerId;
-  }
-
-  private static getRutaAsignadaNombreByVehiculoId(vehiculoId: number): string {
-    const vehiculo = Datos.VEHICULOS.find(item => item.id === vehiculoId);
-    if (!vehiculo) {
-      return '';
-    }
-
-    const ruta = Datos.RUTAS.find(item => item.vehiculoAsignado === vehiculo.placa);
-    return ruta?.nombre ?? '';
-  }
 
   private static toNumber(value: unknown): number | null {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -585,15 +473,32 @@ export class Datos {
 
   private static normalizeServiceLifecycleStatus(raw: BackendServicePayload): ServiceLifecycleStatus {
     const status = String(raw.status ?? '').toLowerCase();
-    const skippedTokens = ['skip', 'skipped', 'saltad', 'omit', 'no atendido', 'no_atendido', 'r', 'retras', 'postpon', 'reprogram'];
-    if (skippedTokens.some(token => status.includes(token))) {
-      return 'skipped';
-    }
-
     const canceledByFlag = Boolean(raw.canceled ?? raw.isCanceled);
 
-    if (canceledByFlag || status.includes('cancel')) {
+    if (canceledByFlag || status === 'x' || status.includes('cancel')) {
       return 'canceled';
+    }
+
+    if (
+      status === 'i' ||
+      status.includes('en progreso') ||
+      status.includes('in_progress') ||
+      status.includes('in-progress') ||
+      status.includes('progress') ||
+      status.includes('ongoing')
+    ) {
+      return 'in_progress';
+    }
+
+    if (
+      status === 'r' ||
+      status.includes('retras') ||
+      status.includes('delay') ||
+      status.includes('late') ||
+      status.includes('postpon') ||
+      status.includes('reprogram')
+    ) {
+      return 'delayed';
     }
 
     const completedTokens = ['c', 'completed', 'completado', 'done', 'finished', 'finalizado', 'atendido', 'closed'];
@@ -731,8 +636,9 @@ export class Datos {
         return;
       }
 
-      if (serviceStatus === 'canceled' || serviceStatus === 'skipped') {
+      if (serviceStatus === 'canceled') {
         destinosCancelados += 1;
+        return;
       }
 
       destinosPendientes += 1;
@@ -833,7 +739,7 @@ export class Datos {
     rutaId: number,
     options?: ServicesQueryOptions,
   ): Promise<BackendServicePayload[] | null> {
-    const statuses = options?.statuses ?? ['completed', 'pending', 'canceled', 'skipped', 'saltado'];
+    const statuses = options?.statuses ?? ['c', 'p', 'x', 'i', 'r', 'completed', 'pending', 'canceled', 'in_progress', 'delayed'];
     const date = options?.date ?? Datos.getTodayIsoDate();
 
     try {
@@ -1209,8 +1115,7 @@ export class Datos {
       if (many && many.length > 0) {
         const byRoute = many.find(item => {
           const evidenceRouteId = Datos.toNumber(item.routeId ?? item.route_id);
-          const evidenceServiceId = Datos.toNumber(item.serviceId);
-          return evidenceRouteId === rutaId || evidenceServiceId === rutaId;
+          return evidenceRouteId === rutaId;
         });
 
         return byRoute ?? many[0];
@@ -1339,7 +1244,7 @@ export class Datos {
     }
 
     const serviceStatus = Datos.normalizeServiceLifecycleStatus(raw);
-    if (serviceStatus !== 'skipped' && serviceStatus !== 'canceled') {
+    if (serviceStatus !== 'canceled') {
       return null;
     }
 
@@ -1350,7 +1255,7 @@ export class Datos {
       rutaId,
       destino: raw.destination ?? raw.address ?? `Servicio ${id}`,
       comentario:
-        comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
+        comentario || 'Servicio cancelado durante el recorrido.',
     };
   }
 
@@ -1644,36 +1549,28 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (routes && routes.length > 0) {
-      const usersById = Datos.buildUsersById(users ?? []);
-      const today = Datos.getTodayIsoDate();
-      const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
-        Datos.getRouteServicesCountByDateDesdeBackend(today),
-        Datos.getRouteStatisticsByDateDesdeBackend(today),
-      ]);
-
-      const mappedRoutes = routes.map(route =>
-        Datos.mapRouteToUI(
-          {
-            ...route,
-            userId: route.userId ?? null,
-          },
-          usersById,
-        ),
-      );
-
-      return Promise.all(mappedRoutes.map(route => Datos.enrichRouteWithServiceMetrics(route, servicesCountByRoute, statisticsByRoute)));
+    if (!routes || routes.length === 0) {
+      return [];
     }
 
-    return Datos.RUTAS.map(ruta => {
-      const mapped = Datos.mapRutaConConductorAsignado(ruta);
-      const pendientesTotales = mapped.destinosPendientes + mapped.destinosCancelados;
-      return {
-        ...mapped,
-        destinosPendientes: pendientesTotales,
-        destinosCancelados: 0,
-      };
-    });
+    const usersById = Datos.buildUsersById(users ?? []);
+    const today = Datos.getTodayIsoDate();
+    const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
+      Datos.getRouteServicesCountByDateDesdeBackend(today),
+      Datos.getRouteStatisticsByDateDesdeBackend(today),
+    ]);
+
+    const mappedRoutes = routes.map(route =>
+      Datos.mapRouteToUI(
+        {
+          ...route,
+          userId: route.userId ?? null,
+        },
+        usersById,
+      ),
+    );
+
+    return Promise.all(mappedRoutes.map(route => Datos.enrichRouteWithServiceMetrics(route, servicesCountByRoute, statisticsByRoute)));
   }
 
   static async getRutaById(id: number): Promise<RutaData | null> {
@@ -1682,174 +1579,29 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (route) {
-      const usersById = Datos.buildUsersById(users ?? []);
-      const mapped = Datos.mapRouteToUI(route, usersById);
-      const today = Datos.getTodayIsoDate();
-      const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
-        Datos.getRouteServicesCountByDateDesdeBackend(today),
-        Datos.getRouteStatisticsByDateDesdeBackend(today, id),
-      ]);
-
-      return Datos.enrichRouteWithServiceMetrics(mapped, servicesCountByRoute, statisticsByRoute);
-    }
-
-    const ruta = Datos.RUTAS.find(item => item.id === id);
-    if (!ruta) {
+    if (!route) {
       return null;
     }
 
-    const mapped = Datos.mapRutaConConductorAsignado(ruta);
-    return {
-      ...mapped,
-      destinosPendientes: mapped.destinosPendientes + mapped.destinosCancelados,
-      destinosCancelados: 0,
-    };
+    const usersById = Datos.buildUsersById(users ?? []);
+    const mapped = Datos.mapRouteToUI(route, usersById);
+    const today = Datos.getTodayIsoDate();
+    const [servicesCountByRoute, statisticsByRoute] = await Promise.all([
+      Datos.getRouteServicesCountByDateDesdeBackend(today),
+      Datos.getRouteStatisticsByDateDesdeBackend(today, id),
+    ]);
+
+    return Datos.enrichRouteWithServiceMetrics(mapped, servicesCountByRoute, statisticsByRoute);
   }
-
-  private static readonly EVIDENCIAS: EvidenciaData[] = [
-    {
-      rutaId: 1,
-      comentario: 'La recolección inició con retraso por congestión en el acceso al mercado. Se completó el vaciado de un contenedor principal.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedor principal antes del vaciado'}, {id: 2, descripcion: 'Frente del vehículo al inicio del turno'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Contenedor vaciado y área asegurada'}, {id: 2, descripcion: 'Zona barrida tras la recolección'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado del punto de acopio'},
-    },
-    {
-      rutaId: 2,
-      comentario: 'Sin incidencias. Se completó la recolección de residuos domiciliarios según el recorrido programado.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva vacía antes de iniciar la ruta'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Punto de recolección liberado'}, {id: 2, descripcion: 'Área sin residuos dispersos'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor de zona'},
-    },
-    {
-      rutaId: 3,
-      comentario: 'Dos puntos quedaron para una segunda pasada porque los contenedores aún no habían sido colocados en la vía autorizada.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedores sin acceso libre al arribo'}, {id: 2, descripcion: 'Estado del vehículo al comenzar el tramo'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Registro del punto pendiente para segunda visita'}, {id: 2, descripcion: 'Observación de acceso restringido adjunta'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del inspector de sector'},
-    },
-    {
-      rutaId: 4,
-      comentario: 'Ruta cumplida al 100%. Recolección industrial sin observaciones ni derrames.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedores industriales antes del vaciado'}, {id: 2, descripcion: 'Compuerta del vehículo asegurada'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Contenedores vacíos'}, {id: 2, descripcion: 'Patio limpio al finalizar el servicio'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado de planta'},
-    },
-    {
-      rutaId: 5,
-      comentario: 'Un punto de recolección fue cancelado porque la ubicación registrada no coincidía con el contenedor asignado.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Punto revisado sin contenedor visible'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Incidencia registrada en la ruta'}, {id: 2, descripcion: 'Evidencia fotográfica del punto vacío'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor de operación'},
-    },
-    {
-      rutaId: 6,
-      comentario: 'La lluvia redujo la velocidad de recorrido en la zona norte, pero se mantuvo la recolección de residuos húmedos.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva y tapas verificadas por lluvia'}, {id: 2, descripcion: 'Estado inicial de la vía'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección completada bajo lluvia'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del coordinador de zona norte'},
-    },
-    {
-      rutaId: 7,
-      comentario: 'La unidad presentó una falla menor en el sistema hidráulico; la recolección se reanudó con 40 minutos de retraso.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Vehículo antes de la revisión mecánica'}, {id: 2, descripcion: 'Sistema de compactación asegurado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Ruta reanudada y tramo final completado'}, {id: 2, descripcion: 'Reporte técnico adjunto'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del técnico de mantenimiento'},
-    },
-    {
-      rutaId: 8,
-      comentario: 'Ruta completada sin incidencias. Se retiraron residuos orgánicos y reciclables según lo previsto.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Puntos de acopio en condición operativa al inicio'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección completada y zona despejada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del responsable municipal'},
-    },
-    {
-      rutaId: 9,
-      comentario: 'Se detectó un contenedor fracturado durante el recorrido y se notificó al área de mantenimiento urbano.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Contenedor en uso al inicio'}, {id: 2, descripcion: 'Unidad operativa antes del vaciado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Daño registrado en el contenedor'}, {id: 2, descripcion: 'Fotografía de la estructura afectada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del inspector de calidad urbana'},
-    },
-    {
-      rutaId: 10,
-      comentario: 'Sin novedades. Recolección rápida en zona comercial completada antes del horario pico.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Equipo listo para recolección rápida'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Registro de recolección completada'}, {id: 2, descripcion: 'Foto del punto despejado'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado comercial'},
-    },
-    {
-      rutaId: 11,
-      comentario: 'Punto ubicado en zona restringida; se coordinó el ingreso con seguridad para retirar residuos acumulados.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Acceso autorizado por seguridad'}, {id: 2, descripcion: 'Vehículo en ingreso controlado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Residuos retirados en caseta de control'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del guardia de acceso'},
-    },
-    {
-      rutaId: 12,
-      comentario: 'Ruta con el mayor volumen de residuos del mes. El recorrido se completó sin desbordes.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva preparada para alto volumen'}, {id: 2, descripcion: 'Compactación inicial verificada'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Puntos vaciados por completo'}, {id: 2, descripcion: 'Área sin residuos remanentes'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del jefe de operaciones'},
-    },
-    {
-      rutaId: 13,
-      comentario: 'La administración del condominio solicitó reprogramar el retiro de residuos para un nuevo horario y se atendió sin incidentes.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Ruta reprogramada lista para ejecución'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Recolección en nuevo horario confirmada'}, {id: 2, descripcion: 'Conformidad del encargado registrada'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado del condominio'},
-    },
-    {
-      rutaId: 14,
-      comentario: 'Ruta casi finalizada. Un punto de recolección quedó pendiente para la jornada de mañana.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Tolva con carga parcial del día'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Tramos del día completados'}, {id: 2, descripcion: 'Punto pendiente documentado con fotografía'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del supervisor del turno'},
-    },
-    {
-      rutaId: 15,
-      comentario: 'Ruta completada al 100%. Excelente desempeño en la recolección y traslado final de residuos.',
-      estadoAlLlegar: [{id: 1, descripcion: 'Inicio de ruta registrado'}, {id: 2, descripcion: 'Kilometraje inicial anotado'}],
-      estadoAlSalir: [{id: 1, descripcion: 'Último punto de recolección completado'}, {id: 2, descripcion: 'Cierre de ruta confirmado'}],
-      firmaEncargado: {id: 1, descripcion: 'Firma del encargado de base operativa'},
-    },
-  ];
-
-  private static readonly DESTINOS_CANCELADOS: DestinoCanceladoData[] = [
-    {id: 1, rutaId: 1, destino: 'Av. Grau 450', comentario: 'El punto quedó inaccesible por cierre temporal del mercado y no se pudo retirar el contenedor.'},
-    {id: 2, rutaId: 3, destino: 'Jr. Unión 181', comentario: 'La unidad no pudo ingresar por bloqueo de vía en el horario programado.'},
-    {id: 3, rutaId: 5, destino: 'Los Olivos Mz B Lt 8', comentario: 'La ubicación registrada no coincidía con el punto real de recolección.'},
-    {id: 4, rutaId: 7, destino: 'Pueblo Libre 245', comentario: 'La falla mecánica retrasó el recorrido y el punto fue reprogramado para el siguiente turno.'},
-    {id: 5, rutaId: 9, destino: 'Barranco 902', comentario: 'El contenedor estaba fracturado y se canceló la recolección hasta reemplazo por seguridad.'},
-    {id: 6, rutaId: 11, destino: 'Comas Sector 3', comentario: 'Acceso restringido sin autorización vigente al momento de la visita.'},
-    {id: 7, rutaId: 14, destino: 'Ate Zona Industrial', comentario: 'El horario autorizado para retiro de residuos había finalizado y el servicio quedó reagendado.'},
-  ];
 
   static async getVehiculos(): Promise<VehiculoData[]> {
     const backendData = await Datos.getVehiculosDesdeBackend();
-    if (backendData && backendData.length > 0) {
-      return backendData;
-    }
-
-    return Datos.VEHICULOS.map(v => ({
-      ...v,
-      rutaAsignada: Datos.getRutaAsignadaNombreByVehiculoId(v.id),
-    }));
+    return backendData ?? [];
   }
 
   static async getVehiculoById(id: number): Promise<VehiculoData | null> {
     const backendData = await Datos.getVehiculoDesdeBackend(id);
-    if (backendData) {
-      return backendData;
-    }
-
-    const vehiculo = Datos.VEHICULOS.find(item => item.id === id);
-    return vehiculo
-      ? {
-          ...vehiculo,
-          rutaAsignada: Datos.getRutaAsignadaNombreByVehiculoId(vehiculo.id),
-        }
-      : null;
+    return backendData;
   }
 
   static async getVehiculoAsignadoPorRutaId(rutaId: number): Promise<VehiculoData | null> {
@@ -1875,87 +1627,22 @@ export class Datos {
       }
     }
 
-    const localRoute = Datos.RUTAS.find(item => item.id === rutaId);
-    if (!localRoute?.vehiculoAsignado) {
-      return null;
-    }
-
-    const localVehicle = Datos.VEHICULOS.find(item => item.placa === localRoute.vehiculoAsignado);
-    if (!localVehicle) {
-      return null;
-    }
-
-    const vehicle = await Datos.getVehiculoById(localVehicle.id);
-    if (!vehicle) {
-      return null;
-    }
-
-    return {
-      ...vehicle,
-      rutaAsignada: localRoute.nombre,
-    };
+    return null;
   }
 
   static async getVehiculoEstadoById(id: number): Promise<VehiculoEstadoData | null> {
     const backendData = await Datos.getVehiculoEstadoDesdeBackend(id);
-    if (backendData) {
-      return backendData;
-    }
-
-    const estado = Datos.VEHICULO_ESTADOS.find(item => item.vehiculoId === id);
-    if (!estado) {
-      return null;
-    }
-    return {
-      vehiculoId: estado.vehiculoId,
-      deficiencias: [...estado.deficiencias],
-      comentarios: [...estado.comentarios],
-    };
+    return backendData;
   }
-
-  private static readonly TRABAJADORES: TrabajadorData[] = [
-    {id: 1,  nombre: 'Carlos Pérez',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 2,  nombre: 'Ana López',            cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 3,  nombre: 'Luis García',          cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 4,  nombre: 'María Torres',         cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 5,  nombre: 'Jorge Díaz',           cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 6,  nombre: 'Sofía Ramírez',        cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 7,  nombre: 'Pedro Castillo',       cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 8,  nombre: 'Lucía Herrera',        cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 9,  nombre: 'Diego Flores',         cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 10, nombre: 'Valentina Cruz',       cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 11, nombre: 'Miguel Rojas',         cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 12, nombre: 'Camila Vega',          cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 13, nombre: 'Andrés Molina',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 14, nombre: 'Renata Silva',         cargo: 'Conductora',         tipo: 'conductor'},
-    {id: 15, nombre: 'Bruno Navarro',        cargo: 'Conductor',          tipo: 'conductor'},
-    {id: 16, nombre: 'Fernando Gómez',       cargo: 'Gerente de Rutas',   tipo: 'administrativo'},
-    {id: 17, nombre: 'Gabriela Quispe',      cargo: 'Asistente Admin',    tipo: 'administrativo'},
-    {id: 18, nombre: 'Roberto Sánchez',      cargo: 'Supervisor',         tipo: 'administrativo'},
-    {id: 19, nombre: 'Isabela Martínez',     cargo: 'Coordinadora',       tipo: 'administrativo'},
-    {id: 20, nombre: 'Javier López',         cargo: 'Asistente Admin',    tipo: 'administrativo'},
-    {id: 21, nombre: 'Marcela Vargas',       cargo: 'Gerente de Flota',   tipo: 'administrativo'},
-    {id: 22, nombre: 'Ricardo Fuentes',      cargo: 'Coordinador Logístico', tipo: 'administrativo'},
-    {id: 23, nombre: 'Patricia Núñez',       cargo: 'Asistente de Oficina', tipo: 'administrativo'},
-  ];
 
   static async getTrabajadores(): Promise<TrabajadorData[]> {
     const users = await Datos.getUsuariosDesdeBackend();
-    if (users && users.length > 0) {
-      return users.map(Datos.mapUserToTrabajador);
-    }
-
-    return Datos.TRABAJADORES.map(t => ({...t}));
+    return users?.map(Datos.mapUserToTrabajador) ?? [];
   }
 
   static async getTrabajadorById(id: number): Promise<TrabajadorData | null> {
     const user = await Datos.getUsuarioDesdeBackend(id);
-    if (user) {
-      return Datos.mapUserToTrabajador(user);
-    }
-
-    const trabajador = Datos.TRABAJADORES.find(item => item.id === id);
-    return trabajador ? {...trabajador} : null;
+    return user ? Datos.mapUserToTrabajador(user) : null;
   }
 
   static async getConductoresSinRuta(): Promise<TrabajadorData[]> {
@@ -1964,22 +1651,19 @@ export class Datos {
       Datos.getRutasDesdeBackend(),
     ]);
 
-    if (users && routes) {
-      const assignedUserIds = new Set<number>(
-        routes
-          .map(route => route.userId)
-          .filter((userId): userId is number => typeof userId === 'number'),
-      );
-
-      return users
-        .filter(user => user.tipo === 'conductor' && !assignedUserIds.has(user.id))
-        .map(Datos.mapUserToTrabajador);
+    if (!users || !routes) {
+      return [];
     }
 
-    const conductoresTomados = new Set<number>(Datos.getFallbackAssignedByWorkerId().keys());
-    return Datos.TRABAJADORES
-      .filter(item => item.tipo === 'conductor' && !conductoresTomados.has(item.id))
-      .map(item => ({...item}));
+    const assignedUserIds = new Set<number>(
+      routes
+        .map(route => route.userId)
+        .filter((userId): userId is number => typeof userId === 'number'),
+    );
+
+    return users
+      .filter(user => user.tipo === 'conductor' && !assignedUserIds.has(user.id))
+      .map(Datos.mapUserToTrabajador);
   }
 
   static async getConductoresParaRuta(rutaId: number): Promise<TrabajadorData[]> {
@@ -1988,32 +1672,24 @@ export class Datos {
       Datos.getRutasDesdeBackend(),
     ]);
 
-    if (users && routes) {
-      const assignedByUser = new Map<number, number>();
-      routes.forEach(route => {
-        if (typeof route.userId === 'number') {
-          assignedByUser.set(route.userId, route.id);
-        }
-      });
-
-      return users
-        .filter(user => user.tipo === 'conductor')
-        .filter(user => {
-          const assignedRouteId = assignedByUser.get(user.id);
-          return !assignedRouteId || assignedRouteId === rutaId;
-        })
-        .map(Datos.mapUserToTrabajador);
+    if (!users || !routes) {
+      return [];
     }
 
-    const assignedByUser = Datos.getFallbackAssignedByWorkerId();
+    const assignedByUser = new Map<number, number>();
+    routes.forEach(route => {
+      if (typeof route.userId === 'number') {
+        assignedByUser.set(route.userId, route.id);
+      }
+    });
 
-    return Datos.TRABAJADORES
-      .filter(item => item.tipo === 'conductor')
-      .filter(item => {
-        const assignedRouteId = assignedByUser.get(item.id);
+    return users
+      .filter(user => user.tipo === 'conductor')
+      .filter(user => {
+        const assignedRouteId = assignedByUser.get(user.id);
         return !assignedRouteId || assignedRouteId === rutaId;
       })
-      .map(item => ({...item}));
+      .map(Datos.mapUserToTrabajador);
   }
 
   static async getConductorAsignadoPorRutaId(rutaId: number): Promise<TrabajadorData | null> {
@@ -2034,13 +1710,6 @@ export class Datos {
       }
     }
 
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    for (const [trabajadorId, assignedRouteId] of assignedByWorker.entries()) {
-      if (assignedRouteId === rutaId) {
-        const conductor = Datos.TRABAJADORES.find(item => item.id === trabajadorId && item.tipo === 'conductor');
-        return conductor ? {...conductor} : null;
-      }
-    }
     return null;
   }
 
@@ -2050,68 +1719,34 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (route && users) {
-      const trabajador = users.find(item => item.id === trabajadorId);
-      if (!trabajador || trabajador.tipo !== 'conductor') {
-        return {ok: false, reason: 'invalid-worker'};
-      }
-
-      const previousRoute = await Datos.findAssignedRouteForUserBackend(trabajadorId);
-      if (previousRoute && previousRoute.id !== rutaId) {
-        const released = await Datos.assignRouteToUserOnBackend(previousRoute, null);
-        if (!released) {
-          return {ok: false, reason: 'already-assigned'};
-        }
-      }
-
-      const assigned = await Datos.assignRouteToUserOnBackend(route, trabajadorId);
-      if (assigned) {
-        return {ok: true};
-      }
-
+    if (!route || !users) {
       return {ok: false, reason: 'invalid-route'};
     }
 
-    const trabajador = Datos.TRABAJADORES.find(item => item.id === trabajadorId);
+    const trabajador = users.find(item => item.id === trabajadorId);
     if (!trabajador || trabajador.tipo !== 'conductor') {
       return {ok: false, reason: 'invalid-worker'};
     }
 
-    const ruta = Datos.RUTAS.find(item => item.id === rutaId);
-    if (!ruta) {
-      return {ok: false, reason: 'invalid-route'};
-    }
-
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    const rutaActual = assignedByWorker.get(trabajadorId);
-    if (rutaActual && rutaActual !== rutaId) {
-      return {ok: false, reason: 'already-assigned'};
-    }
-
-    for (const [conductorId, assignedRouteId] of assignedByWorker.entries()) {
-      if (assignedRouteId === rutaId && conductorId !== trabajadorId) {
-        return {ok: false, reason: 'route-taken'};
+    const previousRoute = await Datos.findAssignedRouteForUserBackend(trabajadorId);
+    if (previousRoute && previousRoute.id !== rutaId) {
+      const released = await Datos.assignRouteToUserOnBackend(previousRoute, null);
+      if (!released) {
+        return {ok: false, reason: 'already-assigned'};
       }
     }
 
-    Datos.ASIGNACIONES.set(trabajadorId, rutaId);
-    return {ok: true};
+    const assigned = await Datos.assignRouteToUserOnBackend(route, trabajadorId);
+    return assigned ? {ok: true} : {ok: false, reason: 'invalid-route'};
   }
 
   static async desasignarRuta(trabajadorId: number): Promise<boolean> {
     const route = await Datos.findAssignedRouteForUserBackend(trabajadorId);
-    if (route) {
-      const released = await Datos.assignRouteToUserOnBackend(route, null);
-      if (released) {
-        return true;
-      }
-
-      // If backend assignment update fails, keep local state operable.
-      Datos.ASIGNACIONES.delete(trabajadorId);
-      return true;
+    if (!route) {
+      return false;
     }
 
-    return Datos.ASIGNACIONES.delete(trabajadorId);
+    return Datos.assignRouteToUserOnBackend(route, null);
   }
 
   static async asignarConductorARuta(trabajadorId: number, rutaId: number): Promise<AsignacionRutaResult> {
@@ -2146,12 +1781,7 @@ export class Datos {
       return Datos.mapRouteToUI(route, usersById);
     }
 
-    const rutaId = Datos.getFallbackAssignedByWorkerId().get(trabajadorId);
-    if (!rutaId) {
-      return null;
-    }
-    const ruta = Datos.RUTAS.find(item => item.id === rutaId);
-    return ruta ? Datos.mapRutaConConductorAsignado(ruta) : null;
+    return null;
   }
 
   static async getRutasDisponiblesParaConductor(trabajadorId: number): Promise<RutaData[]> {
@@ -2160,21 +1790,15 @@ export class Datos {
       Datos.getUsuariosDesdeBackend(),
     ]);
 
-    if (routes && users) {
-      const usersById = Datos.buildUsersById(users);
-
-      return routes
-        .filter(route => !route.userId || route.userId === trabajadorId)
-        .map(route => Datos.mapRouteToUI(route, usersById));
+    if (!routes || !users) {
+      return [];
     }
 
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    const rutaAsignada = assignedByWorker.get(trabajadorId);
-    const rutasTomadas = new Set<number>(assignedByWorker.values());
-    if (rutaAsignada) {
-      rutasTomadas.delete(rutaAsignada);
-    }
-    return Datos.RUTAS.filter(ruta => !rutasTomadas.has(ruta.id)).map(ruta => Datos.mapRutaConConductorAsignado(ruta));
+    const usersById = Datos.buildUsersById(users);
+
+    return routes
+      .filter(route => !route.userId || route.userId === trabajadorId)
+      .map(route => Datos.mapRouteToUI(route, usersById));
   }
 
   static async getRutasAsignadasPorConductores(trabajadorIds: number[]): Promise<Record<number, string>> {
@@ -2184,30 +1808,17 @@ export class Datos {
 
     const uniqueIds = new Set(trabajadorIds);
     const routes = await Datos.getRutasDesdeBackend();
-    if (routes) {
-      const assigned: Record<number, string> = {};
-      routes.forEach(route => {
-        if (typeof route.userId === 'number' && uniqueIds.has(route.userId)) {
-          assigned[route.userId] = route.nombre;
-        }
-      });
-      return assigned;
+    if (!routes) {
+      return {};
     }
 
-    const localAssigned: Record<number, string> = {};
-    const assignedByWorker = Datos.getFallbackAssignedByWorkerId();
-    assignedByWorker.forEach((routeId, trabajadorId) => {
-      if (!uniqueIds.has(trabajadorId)) {
-        return;
-      }
-
-      const ruta = Datos.RUTAS.find(item => item.id === routeId);
-      if (ruta) {
-        localAssigned[trabajadorId] = ruta.nombre;
+    const assigned: Record<number, string> = {};
+    routes.forEach(route => {
+      if (typeof route.userId === 'number' && uniqueIds.has(route.userId)) {
+        assigned[route.userId] = route.nombre;
       }
     });
-
-    return localAssigned;
+    return assigned;
   }
 
   static async getEvidenciasByRutaId(rutaId: number): Promise<EvidenciaData | null> {
@@ -2218,23 +1829,13 @@ export class Datos {
       return Datos.buildEvidenciaDataFromBackend(rutaId, evidenceId, evidence);
     }
 
-    const ev = Datos.EVIDENCIAS.find(item => item.rutaId === rutaId);
-    if (!ev) {
-      return null;
-    }
-    return {
-      rutaId: ev.rutaId,
-      comentario: ev.comentario,
-      estadoAlLlegar: ev.estadoAlLlegar.map(img => ({...img})),
-      estadoAlSalir: ev.estadoAlSalir.map(img => ({...img})),
-      firmaEncargado: {...ev.firmaEncargado},
-    };
+    return null;
   }
 
   static async getServiciosConEstadoByRutaId(
     rutaId: number,
     date?: string,
-    statuses: string[] = ['completed', 'pending', 'canceled', 'skipped', 'saltado'],
+    statuses: string[] = ['c', 'p', 'x', 'i', 'r', 'completed', 'pending', 'canceled', 'in_progress', 'delayed'],
   ): Promise<RutaServicioData[]> {
     const services = await Datos.getServiciosPorRutaDesdeBackend(rutaId, {date, statuses});
     if (services && services.length > 0) {
@@ -2264,28 +1865,17 @@ export class Datos {
       return backendData;
     }
 
-    const skippedServices = await Datos.getServiciosConEstadoByRutaId(
+    const canceledServices = await Datos.getServiciosConEstadoByRutaId(
       rutaId,
       Datos.getTodayIsoDate(),
-      ['canceled', 'skipped', 'saltado'],
+      ['x', 'canceled', 'cancelado'],
     );
 
-    const mappedSkipped = skippedServices.map(service => ({
+    return canceledServices.map(service => ({
       id: service.id,
       rutaId,
       destino: service.destino,
-      comentario: service.comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
+      comentario: service.comentario || 'Servicio cancelado.',
     }));
-
-    if (mappedSkipped.length > 0) {
-      return mappedSkipped;
-    }
-
-    return Datos.DESTINOS_CANCELADOS
-      .filter(item => item.rutaId === rutaId)
-      .map(item => ({
-        ...item,
-        comentario: item.comentario || 'Servicio saltado durante el recorrido; pendiente de atencion.',
-      }));
   }
 }

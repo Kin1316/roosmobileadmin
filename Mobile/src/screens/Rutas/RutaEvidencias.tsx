@@ -61,6 +61,11 @@ export default function RutaEvidencias() {
 
   const handleSelectServicio = async (servicio: RutaServicioData) => {
     setSelectedServiceId(servicio.id);
+    if (servicio.estado !== 'completed') {
+      setEvidencia(null);
+      return;
+    }
+
     setLoadingEvidence(true);
     try {
       const data = await Datos.getEvidenciasByServiceId(servicio.id, route.params.routeId);
@@ -76,11 +81,14 @@ export default function RutaEvidencias() {
     if (status === 'completed') {
       return t('rutas.evidencias.status.completed');
     }
-    if (status === 'skipped') {
-      return t('rutas.evidencias.status.skipped');
-    }
     if (status === 'canceled') {
       return t('rutas.evidencias.status.canceled');
+    }
+    if (status === 'in_progress') {
+      return t('rutas.evidencias.status.inProgress');
+    }
+    if (status === 'delayed') {
+      return t('rutas.evidencias.status.delayed');
     }
     return t('rutas.evidencias.status.pending');
   };
@@ -126,6 +134,7 @@ export default function RutaEvidencias() {
             key={servicio.id}
             style={[
               styles.serviceItem,
+              servicio.estado === 'in_progress' ? styles.serviceItemInProgress : null,
               selectedServiceId === servicio.id ? styles.serviceItemSelected : null,
             ]}
             onPress={() => {
@@ -137,6 +146,7 @@ export default function RutaEvidencias() {
             <Text style={styles.serviceMeta}>
               {t('rutas.evidencias.serviceId', {id: servicio.id})} · {getStatusLabel(servicio.estado)}
             </Text>
+            {servicio.estado === 'in_progress' ? <Text style={styles.inProgressBadge}>{t('rutas.evidencias.inProgressNow')}</Text> : null}
           </TouchableOpacity>
         ))}
       </View>
@@ -149,6 +159,10 @@ export default function RutaEvidencias() {
         <View style={styles.centerCard}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
           <Text style={styles.loadingText}>{t('common.loading')}</Text>
+        </View>
+      ) : servicios.find(item => item.id === selectedServiceId)?.estado !== 'completed' ? (
+        <View style={styles.centerCard}>
+          <Text style={styles.empty}>{t('rutas.evidencias.onlyCompleted')}</Text>
         </View>
       ) : !evidencia ? (
         <View style={styles.centerCard}>
@@ -266,6 +280,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
     backgroundColor: theme.colors.primarySoft,
   },
+  serviceItemInProgress: {
+    borderColor: theme.colors.warningStrong,
+    backgroundColor: theme.colors.warning,
+  },
   serviceTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -275,6 +293,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 12,
     color: theme.colors.textSoft,
+  },
+  inProgressBadge: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.warningStrong,
+    textTransform: 'uppercase',
   },
   imagePlaceholder: {
     gap: 4,

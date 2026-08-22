@@ -72,6 +72,8 @@
       "todayServicesTitle": "Servicios del día",
       "selectServiceHint": "Selecciona un servicio para ver sus evidencias.",
       "selectServiceFirst": "Selecciona un servicio para cargar evidencias.",
+      "onlyCompleted": "Las evidencias solo se muestran para servicios completados.",
+      "inProgressNow": "Servicio en progreso",
       "serviceId": "Servicio #{{id}}",
       "comentario": "Comentario del operador",
       "imagesTitle": "Imágenes del servicio",
@@ -85,7 +87,8 @@
         "completed": "Completado",
         "pending": "Pendiente",
         "canceled": "Cancelado",
-        "skipped": "Saltado"
+        "inProgress": "En progreso",
+        "delayed": "Retrasado"
       }
     },
     "route1": "Ruta 1",
