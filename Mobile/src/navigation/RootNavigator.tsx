@@ -8,6 +8,7 @@ import Rutas from '../screens/Rutas/Rutas';
 import RutaDetalle from '../screens/Rutas/RutaDetalle';
 import RutaMasInformacion from '../screens/Rutas/RutaMasInformacion';
 import RutaEvidencias from '../screens/Rutas/RutaEvidencias';
+import EvidenciaDetalle from '../screens/Rutas/EvidenciaDetalle';
 import RutaDestinosCancelados from '../screens/Rutas/RutaDestinosCancelados';
 import RutaAsignarConductor from '../screens/Rutas/RutaAsignarConductor';
 import Trabajadores from '../screens/Trabajadores/Trabajadores';
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   RutaDetalle: {routeId: number};
   RutaMasInformacion: {routeId: number};
   RutaEvidencias: {routeId: number};
+  EvidenciaDetalle: {serviceId: number; storeName: string};
   RutaDestinosCancelados: {routeId: number};
   RutaAsignarConductor: {routeId: number};
   Trabajadores: undefined;
@@ -121,11 +123,22 @@ export default function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen
             name="RutaEvidencias"
-            options={{...SHARED_PROTECTED_OPTIONS, title: 'Evidencias'}}>
+            options={{...SHARED_PROTECTED_OPTIONS, title: 'Servicios'}}>
             {props => (
               <RequireAuth>
                 <ScreenWithDashboard onMenuPress={() => props.navigation.navigate('App')}>
                   <RutaEvidencias />
+                </ScreenWithDashboard>
+              </RequireAuth>
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="EvidenciaDetalle"
+            options={{...SHARED_PROTECTED_OPTIONS, title: 'Evidencia'}}>
+            {props => (
+              <RequireAuth>
+                <ScreenWithDashboard onMenuPress={() => props.navigation.navigate('App')}>
+                  <EvidenciaDetalle />
                 </ScreenWithDashboard>
               </RequireAuth>
             )}

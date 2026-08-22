@@ -59,25 +59,14 @@ export interface VehiculoEstadoData {
   comentarios: string[];
 }
 
-export interface ImagenEvidencia {
-  id: number;
-  descripcion: string;
-  url?: string;
-}
 
-export interface EvidenciaData {
-  rutaId: number;
-  comentario: string;
-  estadoAlLlegar: ImagenEvidencia[];
-  estadoAlSalir: ImagenEvidencia[];
-  firmaEncargado: ImagenEvidencia;
-}
 
 export interface RutaServicioData {
   id: number;
   rutaId: number;
   storeName: string;
   estado: ServiceLifecycleStatus;
+  priority: number;
   comentario?: string;
   fechaServicio?: string;
 }
@@ -133,20 +122,7 @@ interface BackendUserPayload {
   role?: string;
 }
 
-interface BackendEvidencePayload {
-  evidenceId?: number | string;
-  createdAt?: string;
-  serviceId?: number | string;
-  routeId?: number | string;
-  route_id?: number | string;
-  images?: BackendImagePayload[];
-  pre_images?: BackendImagePayload[];
-  post_images?: BackendImagePayload[];
-  skipped_service_images?: BackendImagePayload[];
-  signature_url?: string;
-  skipped_service_description?: string;
-  skipped_service_reported_at?: string;
-}
+
 
 interface BackendServicePayload {
   serviceId?: number | string;
@@ -166,6 +142,7 @@ interface BackendServicePayload {
   observation?: string;
   skipped_service_description?: string;
   skipped_service_reported_at?: string;
+  priority?: number;
 }
 
 interface BackendRouteServicesCountPayload {
@@ -199,12 +176,7 @@ interface BackendImagePayload {
   evidenceId?: number | string;
 }
 
-interface BackendEvidenceWastePayload {
-  evidenceWasteId?: number | string;
-  weight?: number | string;
-  evidenceId?: number | string;
-  wasteTypeId?: number | string;
-}
+
 
 interface BackendInspectionImagePayload {
   imageId?: number | string;
@@ -241,11 +213,7 @@ interface MappedUserDTO {
   username: string;
 }
 
-interface MappedEvidenceWaste {
-  id: number;
-  weight: number;
-  wasteTypeId: number | null;
-}
+
 
 interface MappedInspection {
   inspectionId: number;
@@ -679,14 +647,12 @@ export class Datos {
       return null;
     }
 
-    // DEBUGGING TEMPORAL PARA VER QUÉ RECIBE LA APP REALMENTE
-    console.log(`[DEBUG ROOS] Mapeando servicio ${id}. Raw object:`, JSON.stringify(raw));
-
     return {
       id,
       rutaId,
       storeName: (raw.storeName ?? raw.destination ?? raw.address ?? `Servicio ${id}`).trim(),
       estado: Datos.normalizeServiceLifecycleStatus(raw),
+      priority: typeof raw.priority === 'number' ? raw.priority : 999,
       comentario: (raw.comment ?? raw.observation ?? '').trim(),
       fechaServicio: Datos.getServiceIsoDate(raw) ?? undefined,
     };
@@ -1687,7 +1653,7 @@ export class Datos {
     };
   }
 
-  private static readonly EVIDENCIAS: EvidenciaData[] = [];
+  
 
   private static readonly DESTINOS_CANCELADOS: DestinoCanceladoData[] = [];
 
