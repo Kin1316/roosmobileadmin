@@ -11,8 +11,8 @@ interface ScreenWithDashboardProps {
 export default function ScreenWithDashboard({children, onMenuPress}: ScreenWithDashboardProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>{children}</View>
       <DashboardBar onMenuPress={onMenuPress} />
+      <View style={styles.content}>{children}</View>
     </View>
   );
 }

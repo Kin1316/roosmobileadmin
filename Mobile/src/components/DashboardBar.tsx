@@ -196,8 +196,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: BAR_HEIGHT,
     alignItems: 'stretch',
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
   },
   hamburgerBtn: {
