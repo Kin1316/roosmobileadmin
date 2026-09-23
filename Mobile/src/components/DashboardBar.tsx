@@ -12,6 +12,7 @@ import {
 import {useTranslation} from 'react-i18next';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useAuthStore} from '../store/auth.store';
 import type {RootStackParamList} from '../navigation/RootNavigator';
 import {Datos, OpcionMenu} from '../services/datos';
@@ -21,13 +22,18 @@ const SIDEBAR_WIDTH = 268;
 const BAR_HEIGHT = 48;
 
 interface DashboardBarProps {
-  onMenuPress: () => void;
+  onMenuPress?: () => void;
+  /** 'full' shows hamburger + menu + logout actions; 'compact' shows only the hamburger next to the title. */
+  variant?: 'full' | 'compact';
+  /** Which safe-area inset to pad for, based on where the bar sits on screen. */
+  safeArea?: 'top' | 'bottom' | 'none';
 }
 
-export default function DashboardBar({onMenuPress}: DashboardBarProps) {
+export default function DashboardBar({onMenuPress, variant = 'full', safeArea = 'none'}: DashboardBarProps) {
   const {t} = useTranslation();
   const logout = useAuthStore(s => s.logout);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [menuItems, setMenuItems] = useState<OpcionMenu[]>([]);
   const [translateX] = useState(() => new Animated.Value(-SIDEBAR_WIDTH));
@@ -107,7 +113,13 @@ export default function DashboardBar({onMenuPress}: DashboardBarProps) {
 
   return (
     <>
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          safeArea === 'bottom' ? styles.containerBottom : undefined,
+          safeArea === 'top' ? {paddingTop: insets.top} : undefined,
+          safeArea === 'bottom' ? {paddingBottom: insets.bottom} : undefined,
+        ]}>
         <TouchableOpacity
           style={styles.hamburgerBtn}
           onPress={openSidebar}
@@ -118,14 +130,20 @@ export default function DashboardBar({onMenuPress}: DashboardBarProps) {
             <View style={styles.hamburgerLine} />
           </View>
         </TouchableOpacity>
-        <View style={styles.divider} />
-        <TouchableOpacity style={styles.action} onPress={onMenuPress}>
+        {variant === 'compact' ? (
           <Text style={styles.actionText}>Menú</Text>
-        </TouchableOpacity>
-        <View style={styles.divider} />
-        <TouchableOpacity style={styles.action} onPress={logout}>
-          <Text style={styles.actionText}>{t('auth.logout')}</Text>
-        </TouchableOpacity>
+        ) : (
+          <>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.action} onPress={onMenuPress}>
+              <Text style={styles.actionText}>Menú</Text>
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.action} onPress={logout}>
+              <Text style={styles.actionText}>{t('auth.logout')}</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       <Modal
@@ -184,6 +202,14 @@ export default function DashboardBar({onMenuPress}: DashboardBarProps) {
                 </TouchableOpacity>
               </Animated.View>
             ))}
+            <TouchableOpacity
+              style={styles.logoutItem}
+              onPress={() => {
+                closeSidebar();
+                logout();
+              }}>
+              <Text style={styles.logoutItemText}>{t('auth.logout')}</Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </Modal>
@@ -194,11 +220,16 @@ export default function DashboardBar({onMenuPress}: DashboardBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    height: BAR_HEIGHT,
+    minHeight: BAR_HEIGHT,
     alignItems: 'stretch',
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
+  },
+  containerBottom: {
+    borderBottomWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   hamburgerBtn: {
     width: BAR_HEIGHT,
@@ -285,5 +316,19 @@ const styles = StyleSheet.create({
   },
   itemTextMuted: {
     color: theme.colors.textSoft,
+  },
+  logoutItem: {
+    marginTop: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  logoutItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
 });
